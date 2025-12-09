@@ -11,10 +11,7 @@ corpus.
     database in Atlas.
   - `dodec`, or the Database of Devoured Example Code: a query tool that lets us find code examples and related
     metadata in the database for reporting or to perform manual updates.
-- `audit-cli`: A Go CLI project to help us audit docs content from files on the local filesystem.
 - `dependency-manager`: A Go CLI project to help us manage dependencies for multiple ecosystems in the docs monorepo
-- `examples-copier`: a Go app that runs as a GitHub App and copies files from the
-   source code repo (generated code examples) to multiple target repos and branches.
 - `github-metrics`: a Node.js script that gets engagement metrics from GitHub for specified repos and writes them
   to a database in Atlas.
 - `query-docs-feedback`: a Go project with type definitions that queries the MongoDB

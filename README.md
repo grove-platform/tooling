@@ -1,8 +1,7 @@
-# Code Example Tooling
+# Grove Platform Tooling
 
 This repository contains tooling that the MongoDB Developer Docs team
-uses audit and track code examples across MongoDB's documentation
-corpus.
+uses perform various tasks related to the Grove platform.
 
 - `audit`: Two Go projects, plus Go type definitions and constants that are
   common to both of them:

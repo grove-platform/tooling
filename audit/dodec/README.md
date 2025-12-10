@@ -2,7 +2,7 @@
 
 This project contains scaffold and several aggregation pipelines to work with the Database of Devoured Example Code.
 The Database of Devoured Example Code contains code examples and related metadata that has been ingested by the [Great
-Docs Code Devourer](https://github.com/mongodb/code-example-tooling/tree/main/audit/gdcd).
+Docs Code Devourer](https://github.com/grove-platform/tooling/tree/main/audit/gdcd).
 
 This DoDEC tooling can currently perform the following tasks:
 
@@ -59,7 +59,7 @@ tables.
 
 - [Print one table](src/utils/PrintSimpleCountDataToConsole.go) with rows representing each collection, product, category,
   or programming language. Use where the aggregation returns a `simpleMap` as defined in [PerformAggregation](src/PerformAggregation.go)
-- [Print multiple tables](src/utils/PrintNestedOneLevelCountDataToConsole.go) with each row representing a category or 
+- [Print multiple tables](src/utils/PrintNestedOneLevelCountDataToConsole.go) with each row representing a category or
   programming language, and each table representing a higher-level division such as product or docs property. Use where
   the aggregation returns a `nestedOneLevelMap` as defined in [PerformAggregation](src/PerformAggregation.go)
 - [Print multiple tables from two-level nested maps](src/utils/PrintNestedTwoLevelCountDataToConsole.go) with each row
@@ -171,12 +171,12 @@ Every collection contains documents that map to one of two schemas:
 #### Summary document
 
 The summary document has a schema that conforms to the
-[CollectionReport](https://github.com/mongodb/code-example-tooling/blob/main/audit/common/CollectionReport.go) type.
+[CollectionReport](https://github.com/grove-platform/tooling/blob/main/audit/common/CollectionReport.go) type.
 
 #### Docs page document
 
 The remaining documents in the collection each map to an individual docs page. The docs page documents have a schema that
-conforms to the [DocsPage](https://github.com/mongodb/code-example-tooling/blob/main/audit/common/DocsPage.go) type.
+conforms to the [DocsPage](https://github.com/grove-platform/tooling/blob/main/audit/common/DocsPage.go) type.
 
 Each docs page has a `nodes` array, which may be `null`, or may contain `CodeNode` elements. The `CodeNode` elements
 contain metadata about the code examples, as well as the examples themselves. To work with only the `CodeNode` elements

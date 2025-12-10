@@ -1,7 +1,7 @@
-# Great Docs Code Devourer (Code Ingest Tool) 
+# Great Docs Code Devourer (Code Ingest Tool)
 
-The Great Docs Code Devourer (GDCD) processes MongoDB documentation pages to extract code examples. It compares these 
-examples with previously stored code to identify new, updated, or removed examples. GDCD stores all code examples and 
+The Great Docs Code Devourer (GDCD) processes MongoDB documentation pages to extract code examples. It compares these
+examples with previously stored code to identify new, updated, or removed examples. GDCD stores all code examples and
 metadata in a MongoDB Atlas database maintained by the Developer Docs team.
 
 
@@ -18,7 +18,7 @@ The database of devoured code examples enables powerful analysis of the document
 - Language coverage across documentation
 
 For querying this data, use the companion project,
-[Database of Devoured Example Code (DODEC)](https://github.com/mongodb/code-example-tooling/tree/main/audit/dodec).
+[Database of Devoured Example Code (DODEC)](https://github.com/grove-platform/tooling/tree/main/audit/dodec).
 
 ## How it works
 
@@ -31,9 +31,9 @@ GDCD follows this pipeline:
 
 ### LLM-Based Code Categorization
 
-We use the Ollama [qwen2.5-coder](https://ollama.com/library/qwen2.5-coder) model to categorize new incoming 
-code examples. At the time of this writing, it is the latest series of code-specific Qwen models focused on improved code 
-reasoning, code generation, and code fixing. This model has consistently produced the most accurate results when 
+We use the Ollama [qwen2.5-coder](https://ollama.com/library/qwen2.5-coder) model to categorize new incoming
+code examples. At the time of this writing, it is the latest series of code-specific Qwen models focused on improved code
+reasoning, code generation, and code fixing. This model has consistently produced the most accurate results when
 categorizing code examples. Refer to the [Ollama](https://ollama.com/) website for more details.
 
 ### Metadata Tracked
@@ -41,7 +41,7 @@ categorizing code examples. Refer to the [Ollama](https://ollama.com/) website f
 We track various metadata about the code examples and their associated documentation pages:
 
 For each code example:
-- Code example text 
+- Code example text
 - File extension and programming language
 - Category
 - Categorization method (LLM or manual)
@@ -77,36 +77,36 @@ connection details and access.
     ```shell
     go get gdcd
     ```
-3. Create the relevant env configuration files in the project root. This project is set up for three environments. You will most likely be running against prod.  
+3. Create the relevant env configuration files in the project root. This project is set up for three environments. You will most likely be running against prod.
    1. Create a `.env.ENVIRONMENT` file for the `ENVIRONMENT` where you want to run the tool:
-      - `production` 
+      - `production`
       - `development`
       - `testing`
-      
+
       (for example, create `.env.production` to run against the prod database)
    2. Add the following:
          ```dotenv
          MONGODB_URI="YOUR_MONGODB_URI_HERE"
          DB_NAME="RELEVANT_DB_NAME_HERE"
          ```
-      - `MONGODB_URI`: Connection string for the Code Snippets project in the Developer Docs Atlas organization. 
+      - `MONGODB_URI`: Connection string for the Code Snippets project in the Developer Docs Atlas organization.
         Contact the Developer Docs team for access.
-      - `DB_NAME`: The database to run the tool on. We maintain several databases for production, testing, and backup purposes. 
+      - `DB_NAME`: The database to run the tool on. We maintain several databases for production, testing, and backup purposes.
         Contact the Developer Docs team for the appropriate DB name.
 
 ## Running the Tool
 
-Set the `APP_ENV` variable to the environment where you want to run the tool, then run from `main.go`. 
+Set the `APP_ENV` variable to the environment where you want to run the tool, then run from `main.go`.
 Env values:
 - `production`
 - `development`
 - `testing`
 
-You can do this from the command line or your IDE: 
+You can do this from the command line or your IDE:
 
 - **Command Line**
 
-    To run from the terminal, set the variable, then run from the project root. 
+    To run from the terminal, set the variable, then run from the project root.
     For example, to run against the `production` environment:
     ```shell
     export APP_ENV=production
@@ -114,14 +114,14 @@ You can do this from the command line or your IDE:
     go run .
     ```
 - **IDE**:
-    
-    To run from an IDE configuration: 
-    1. Set the `APP_ENV` environment variable (e.g. `APP_ENV=production`) 
+
+    To run from an IDE configuration:
+    1. Set the `APP_ENV` environment variable (e.g. `APP_ENV=production`)
     2. Run `main.go`
 
-The progress bar should immediately output to console and continue to display progress until all 
-projects are parsed. Depending on your machine and the amount of projects specified, this can be a 
-long-running program (~1-2hrs ). 
+The progress bar should immediately output to console and continue to display progress until all
+projects are parsed. Depending on your machine and the amount of projects specified, this can be a
+long-running program (~1-2hrs ).
 
 ## Reviewing logs
 
@@ -173,7 +173,7 @@ Error: "failed to connect to MongoDB"
 ```
 1. Verify you've set the correct `APP_ENV` variable and corresponding `.env.ENVIRONMENT` exists in project root
 2. Check your connection string in the corresponding `.env.ENVIRONMENT` file
-3. Check connectivity to Atlas and that your IP is whitelisted 
+3. Check connectivity to Atlas and that your IP is whitelisted
 
 ### Other Issues
 
@@ -181,7 +181,7 @@ Contact the Developer Docs team for assistance with environment setup or access.
 
 ## Disclaimer
 
-Enlist the aid of the Great Docs Code Devourer at your peril! 
+Enlist the aid of the Great Docs Code Devourer at your peril!
 
-This beast is an amalgam of tools with some test coverage, but key bits of business logic still remain uncovered by tests. 
+This beast is an amalgam of tools with some test coverage, but key bits of business logic still remain uncovered by tests.
 If demand/priority permits, we would love to expand and improve this tooling.

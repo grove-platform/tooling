@@ -63,7 +63,7 @@ moved, we must manually adjust the count of new applied usage examples to omit t
 
 ```bash
 # Navigate to the scripts directory first
-cd /Your/Local/Filepath/code-example-tooling/audit/gdcd/scripts
+cd /Your/Local/Filepath/tooling/audit/gdcd/scripts
 
 # Then run the Go script
 go run parse-log.go ../logs/2025-09-24-18-01-30-app.log

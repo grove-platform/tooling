@@ -116,7 +116,7 @@ go run parse-log.go /absolute/path/to/your/log/file.log
 cd /Your/Local/Filepath/tooling/audit/gdcd/scripts
 
 # Then run the Go script with log file and docs repo path
-go run compare-page-counts.go ../logs/2025-12-10-17-58-47-app.log /Users/dachary.carey/workspace/docs-mongodb-internal
+go run compare-page-counts.go ../logs/2025-12-10-17-58-47-app.log /path/to/docs-mongodb-internal
 go run compare-page-counts.go /absolute/path/to/log/file.log /absolute/path/to/docs/repo
 ```
 
@@ -223,8 +223,6 @@ kubernetes                      Log:  N/A    Audit:  153  (only in audit-cli)
 Total projects: 43
 Matching counts: 8
 Different counts: 35
-Only in log: 0
-Only in audit-cli: 0
 
 Total pages in log: 7869
 Total pages in audit-cli: 6759
@@ -235,7 +233,6 @@ This helps identify:
 - **Matching counts**: Projects where log and audit-cli agree
 - **Different counts**: Projects where counts differ (with the difference shown)
 - **Only in log**: Projects found in the log but not in audit-cli output (may indicate project name mismatches)
-- **Only in audit-cli**: Projects found in audit-cli but not in the log - these are automatically excluded in the second run for a cleaner comparison
 - **Total pages**: Sum of all page counts from each source, excluding deprecated projects and projects only in audit-cli
 
 ## Log Format Requirements

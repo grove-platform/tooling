@@ -51,7 +51,7 @@ func normalizeProjectName(name string) string {
 func main() {
 	if len(os.Args) != 3 {
 		fmt.Println("Usage: go run compare-page-counts.go <log-file-path> <docs-repo-path>")
-		fmt.Println("Example: go run compare-page-counts.go ../logs/2025-12-10-17-58-47-app.log /Users/dachary.carey/workspace/docs-mongodb-internal")
+		fmt.Println("Example: go run compare-page-counts.go ../logs/2025-12-10-17-58-47-app.log /path/to/docs-mongodb-internal")
 		os.Exit(1)
 	}
 
@@ -62,6 +62,12 @@ func main() {
 	logCounts, err := parseLogFile(logFile)
 	if err != nil {
 		log.Fatalf("Error parsing log file: %v", err)
+	}
+
+	// Check that audit-cli is available
+	_, err = exec.LookPath("audit-cli")
+	if err != nil {
+		log.Fatalf("audit-cli is not available: %v", err)
 	}
 
 	// Run audit-cli command to get current page counts (first pass without exclusions)
@@ -272,8 +278,9 @@ func compareAndReport(logCounts, auditCounts map[string]int) {
 	fmt.Printf("Total projects: %d\n", len(allProjects))
 	fmt.Printf("Matching counts: %d\n", matching)
 	fmt.Printf("Different counts: %d\n", different)
-	fmt.Printf("Only in log: %d\n", onlyInLog)
-	fmt.Printf("Only in audit-cli: %d\n", onlyInAudit)
+	if onlyInLog > 0 {
+		fmt.Printf("Only in log: %d\n", onlyInLog)
+	}
 	fmt.Println()
 	fmt.Printf("Total pages in log: %d\n", totalLogPages)
 	fmt.Printf("Total pages in audit-cli: %d\n", totalAuditPages)
@@ -282,4 +289,3 @@ func compareAndReport(logCounts, auditCounts map[string]int) {
 		fmt.Printf("Difference: %+d\n", diff)
 	}
 }
-

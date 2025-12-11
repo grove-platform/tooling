@@ -25,7 +25,7 @@ jobs:
             --arg user "$PR_USER" \
             --arg url "$PR_URL" \
             '{
-              "channel": "#docs-devdocs-notifications",
+              "channel": "#docs-devdocs-notifications", 
               "username": "Issue Notifier",
               "icon_emoji": ":mega:",
               "text": "*📢 @DevDocs a PR was opened or issue created in * \($repo)\n*Title:* \($title)\n*By:* \($user)\n*URL:* \($url)"

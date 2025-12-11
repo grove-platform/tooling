@@ -264,7 +264,7 @@ func compareAndReport(logCounts, auditCounts map[string]int) {
 			fmt.Println(diff)
 		}
 	} else {
-		fmt.Println("All projects have matching counts!")
+		fmt.Println("🎉 All projects have matching counts!")
 	}
 
 	// Print summary

@@ -83,7 +83,8 @@ func GetProjects(client *http.Client) []types.ProjectDetails {
 		"guides",
 		"atlas-app-services",
 		"mongoid-railsmdb",
-		"cluster-sync", // The Snooty Data API currently lists `cluster-sync` and `mongosync` as independent projects. We don't want to process twice, so ignore the `cluster-sync` entry.
+		"cluster-sync",      // The Snooty Data API currently lists `cluster-sync` and `mongosync` as independent projects. We don't want to process twice, so ignore the `cluster-sync` entry.
+		"docs-k8s-operator", // The docs k8s operator is deprecated, so we should no longer process it
 	}
 
 	var collectionsToParse []types.ProjectDetails

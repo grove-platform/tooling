@@ -174,50 +174,41 @@ Re-running audit-cli with exclusions...
 
 Projects with differences:
 --------------------------------------------------
-csharp                          Log:   78    Audit:   77  (diff: -1)
-kotlin                          Log:   88    Audit:   87  (diff: -1)
-kotlin-sync                     Log:   95    Audit:   66  (diff: -29)
-entity-framework                Log:   13    Audit:   14  (diff: +1)
-docs                            Log: 1668    Audit: 1596  (diff: -72)
-ruby-driver                     Log:   91    Audit:   62  (diff: -29)
-java-rs                         Log:   56    Audit:   55  (diff: -1)
-mongoid                         Log:   60    Audit:   59  (diff: -1)
-mck                             Log:  153    Audit:  N/A    (only in log)
-mongosync                       Log:   73    Audit:   88  (diff: +15)
-pymongo                         Log:   67    Audit:   66  (diff: -1)
-rust                            Log:   76    Audit:   74  (diff: -2)
-spark-connector                 Log:   16    Audit:   17  (diff: +1)
-php-library                     Log:  259    Audit:  258  (diff: -1)
-scala                           Log:   44    Audit:   43  (diff: -1)
-landing                         Log:   27    Audit:   23  (diff: -4)
-node                            Log:   77    Audit:   74  (diff: -3)
-kafka-connector                 Log:   65    Audit:   65  (match)
-docs-k8s-operator               Log:  142    Audit:  N/A    (only in log)
-pymongo-arrow                   Log:    8    Audit:    9  (diff: +1)
-cpp-driver                      Log:   56    Audit:   52  (diff: -4)
+atlas                           Log:  777    Audit:  703  (diff: -74)
+atlas-architecture              Log:  124    Audit:  121  (diff: -3)
+atlas-cli                       Log: 1276    Audit:  930  (diff: -346)
+atlas-operator                  Log:   58    Audit:   57  (diff: -1)
+c-driver                        Log:   86    Audit:   56  (diff: -30)
 cloud-manager                   Log:  490    Audit:  482  (diff: -8)
 compass                         Log:  117    Audit:  115  (diff: -2)
-atlas-operator                  Log:   58    Audit:   57  (diff: -1)
-atlas-architecture              Log:  124    Audit:  120  (diff: -4)
-laravel                         Log:   58    Audit:   57  (diff: -1)
-java                            Log:   90    Audit:   88  (diff: -2)
-c                               Log:   86    Audit:   56  (diff: -30)
-django                          Log:   30    Audit:   27  (diff: -3)
-atlas-cli                       Log: 1276    Audit:  930  (diff: -346)
-ops-manager                     Log:  632    Audit:  628  (diff: -4)
-golang                          Log:  143    Audit:   66  (diff: -77)
-bi-connector                    Log:   55    Audit:   55  (match)
-docs-relational-migrator        Log:  135    Audit:  109  (diff: -26)
-mongodb-shell                   Log:   65    Audit:   65  (match)
-drivers                         Log:   21    Audit:   20  (diff: -1)
-cloudgov                        Log:   24    Audit:  N/A    (only in log)
+cpp-driver                      Log:   56    Audit:   52  (diff: -4)
+csharp                          Log:   78    Audit:   77  (diff: -1)
 database-tools                  Log:   61    Audit:   53  (diff: -8)
-charts                          Log:  123    Audit:  123  (match)
-cloud-docs                      Log:  777    Audit:  697  (diff: -80)
-mcp-server                      Log:   20    Audit:   20  (match)
-hibernate                       Log:   11    Audit:   11  (match)
+django-mongodb                  Log:   30    Audit:   27  (diff: -3)
+drivers                         Log:   21    Audit:   20  (diff: -1)
+entity-framework                Log:   13    Audit:   14  (diff: +1)
+golang                          Log:  143    Audit:   68  (diff: -75)
+java                            Log:   90    Audit:   89  (diff: -1)
+java-rs                         Log:   56    Audit:   55  (diff: -1)
+kotlin                          Log:   88    Audit:   87  (diff: -1)
+kotlin-sync                     Log:   95    Audit:   66  (diff: -29)
+landing                         Log:   27    Audit:   23  (diff: -4)
+laravel-mongodb                 Log:   58    Audit:   57  (diff: -1)
+manual                          Log: 1668    Audit: 1596  (diff: -72)
+mongocli                        Log:  403    Audit:   17  (diff: -386)
+mongoid                         Log:   60    Audit:   59  (diff: -1)
+mongosync                       Log:   73    Audit:   88  (diff: +15)
+node                            Log:   77    Audit:   76  (diff: -1)
+ops-manager                     Log:  632    Audit:  628  (diff: -4)
+php-library                     Log:  259    Audit:  258  (diff: -1)
+pymongo-arrow-driver            Log:    8    Audit:    9  (diff: +1)
+pymongo-driver                  Log:   67    Audit:   66  (diff: -1)
+relational-migrator             Log:  135    Audit:  109  (diff: -26)
+ruby-driver                     Log:   91    Audit:   62  (diff: -29)
+rust                            Log:   76    Audit:   74  (diff: -2)
+scala-driver                    Log:   44    Audit:   43  (diff: -1)
+spark-connector                 Log:   16    Audit:   17  (diff: +1)
 voyage                          Log:    0    Audit:    1  (diff: +1)
-kubernetes                      Log:  N/A    Audit:  153  (only in audit-cli)
 
 === SUMMARY ===
 Total projects: 43
@@ -225,8 +216,8 @@ Matching counts: 8
 Different counts: 35
 
 Total pages in log: 7869
-Total pages in audit-cli: 6759
-Difference: -1110
+Total pages in audit-cli: 6771
+Difference: -1098
 ```
 
 This helps identify:

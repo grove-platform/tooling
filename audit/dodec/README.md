@@ -35,15 +35,22 @@ Get counts broken down in the following ways:
     substring](src/aggregations/GetStringInCodeNodeCounts.go)
 
 Get IDs for pages based on various criteria:
+
 - [Find docs pages in Atlas that have had code examples added, updated, or removed within the last week](src/aggregations/GetDocsIdsWithRecentActivity.go)
 - [Find docs pages in Atlas that have had new applied usage examples added within the last week](src/aggregations/FindNewAppliedUsageExamples.go)
 - [Find docs pages in Atlas where the Product name is missing](src/aggregations/FindDocsMissingProduct.go)
 - [Find docs pages in Atlas that have a count mismatch between the languages array and the languages in code nodes](src/aggregations/GetPagesWithNodeLangCountMismatch.go)
 
 Get URLs for pages based on various criteria:
+
 - [Find page URLs in Atlas that contain a specific substring](src/aggregations/FindURLContainingString.go)
 
+Get code examples based on specific criteria:
+
+- [Find usage example code nodes by page URLs](src/aggregations/FindWesExamples.go)
+
 **Update Documents**
+
 - [Add `product` and `sub_product` fields](src/updates/AddProductNames.go) to their relevant documents across the 37
   docs properties
 - [Rename a field](src/updates/RenameField.go) in the document across the 37 docs properties
@@ -53,7 +60,7 @@ Get URLs for pages based on various criteria:
 
 **Print to console**
 
-The aggregations listed in the *Retrieve data* section above store data for each collection in maps with varying
+The aggregations listed in the _Retrieve data_ section above store data for each collection in maps with varying
 structures. The `utils` directory contains convenience functions to print the map output to console as one or more
 tables.
 

@@ -1,11 +1,10 @@
 package main
 
 import (
+	"common"
 	"context"
 	"dodec/aggregations"
-	"dodec/types"
 	"dodec/utils"
-	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -21,11 +20,11 @@ func PerformAggregation(db *mongo.Database, ctx context.Context) {
 	//nestedTwoLevelMap := make(map[string]map[string]map[string]int)
 	//pageIdChangesCountMap := make(map[string][]types.PageIdChangedCounts)
 	//pageIdsWithNodeLangCountMismatch := make(map[string][]string)
-	productSubProductCounter := types.NewAppliedUsageExampleCounterByProductSubProduct{
-		ProductSubProductCounts: make(map[string]map[string]int),
-		ProductAggregateCount:   make(map[string]int),
-		PagesInCollections:      make(map[string][]types.PageIdNewAppliedUsageExamples),
-	}
+	// productSubProductCounter := types.NewAppliedUsageExampleCounterByProductSubProduct{
+	// 	ProductSubProductCounts: make(map[string]map[string]int),
+	// 	ProductAggregateCount:   make(map[string]int),
+	// 	PagesInCollections:      make(map[string][]types.PageIdNewAppliedUsageExamples),
+	// }
 
 	// If you just need to get data for a single collection, perform the aggregation using the collection name
 	//simpleMap = aggregations.GetLanguageCounts(db, "pymongo", simpleMap, ctx)
@@ -38,7 +37,8 @@ func PerformAggregation(db *mongo.Database, ctx context.Context) {
 	}
 	//substringToFindInCodeExamples := "defaultauthdb"
 	//substringToFindInPageURL := "code-examples"
-	monthForReporting := time.November
+	// monthForReporting := time.November
+	wesExamplesMap := make(map[string][]common.DocsPage)
 
 	for _, collectionName := range collectionNames {
 		//simpleMap = aggregations.GetCategoryCounts(db, collectionName, simpleMap, ctx)
@@ -60,8 +60,9 @@ func PerformAggregation(db *mongo.Database, ctx context.Context) {
 		//pageIdsWithNodeLangCountMismatch = aggregations.GetPagesWithNodeLangCountMismatch(db, collectionName, pageIdsWithNodeLangCountMismatch, ctx)
 		//pageIdsWithNodeLangCountMismatch = aggregations.FindDocsMissingProduct(db, collectionName, pageIdsWithNodeLangCountMismatch, ctx)
 		//productSubProductCounter = aggregations.FindNewAppliedUsageExamples(db, collectionName, productSubProductCounter, ctx)
-		productSubProductCounter = aggregations.FindUsageExamplesForMonth(db, collectionName, productSubProductCounter, monthForReporting, ctx)
-		//pageIdsWithNodeLangCountMismatch = aggregations.FindURLContainingString(db, collectionName, pageIdsWithNodeLangCountMismatch, ctx, substringToFindInPageURL)
+		// productSubProductCounter = aggregations.FindUsageExamplesForMonth(db, collectionName, productSubProductCounter, monthForReporting, ctx)
+		// pageIdsWithNodeLangCountMismatch = aggregations.FindURLContainingString(db, collectionName, pageIdsWithNodeLangCountMismatch, ctx, substringToFindInPageURL)
+		wesExamplesMap = aggregations.GetCodeExamplesByURLs(db, collectionName, common.WesUrls, wesExamplesMap, ctx)
 	}
 
 	//simpleTableLabel := "Collection"
@@ -84,5 +85,6 @@ func PerformAggregation(db *mongo.Database, ctx context.Context) {
 	//utils.PrintPageIdChangesCountMap(pageIdChangesCountMap)
 	//utils.PrintPageIdsWithNodeLangCountMismatch(pageIdsWithNodeLangCountMismatch)
 	//utils.PrintPageIdNewAppliedUsageExampleCounts(productSubProductCounter)
-	utils.PrintMonthlyUsageExampleCounts(productSubProductCounter, monthForReporting)
+	// utils.PrintMonthlyUsageExampleCounts(productSubProductCounter, monthForReporting)
+	utils.PrintCodeExamplesByURL(wesExamplesMap)
 }

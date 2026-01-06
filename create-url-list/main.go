@@ -123,6 +123,7 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 
 	// Read and filter records
 	var records []Record
+	var skippedURLs []string
 	for {
 		row, err := reader.Read()
 		if err != nil {
@@ -142,7 +143,8 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 		// Validate URL structure
 		page := row[pageIdx]
 		if !strings.HasPrefix(page, "www.") {
-			return nil, fmt.Errorf("URL structure does not match expected URL structure: %s", page)
+			skippedURLs = append(skippedURLs, page)
+			continue
 		}
 
 		// Parse and filter by Measure Values
@@ -156,6 +158,14 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 				Page:          page,
 				MeasureValues: measureValue,
 			})
+		}
+	}
+
+	// Report skipped URLs
+	if len(skippedURLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Warning: Skipped %d URL(s) that do not match expected structure (www.*):\n", len(skippedURLs))
+		for _, url := range skippedURLs {
+			fmt.Fprintf(os.Stderr, "  - %s\n", url)
 		}
 	}
 

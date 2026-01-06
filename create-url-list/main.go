@@ -52,13 +52,13 @@ func run() error {
 	}
 
 	// Read and process CSV
-	records, err := processCSV(inputPath, minVal, maxVal)
+	records, err := processCSV(inputPath)
 	if err != nil {
 		return err
 	}
 
 	// Generate output
-	if err := writeOutput(records, outputPath, rangeStr); err != nil {
+	if err := writeOutput(records, outputPath, rangeStr, minVal, maxVal); err != nil {
 		return err
 	}
 
@@ -88,7 +88,7 @@ func parseRange(rangeStr string) (int, int, error) {
 	return min, max, nil
 }
 
-func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
+func processCSV(inputPath string) ([]Record, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %v", err)
@@ -121,7 +121,7 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 		return nil, fmt.Errorf("missing required columns (Page, Measure Names, Measure Values)")
 	}
 
-	// Read and filter records
+	// Read and collect all Pageviews records
 	var records []Record
 	var skippedURLs []string
 	for {
@@ -147,18 +147,16 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 			continue
 		}
 
-		// Parse and filter by Measure Values
+		// Parse Measure Values
 		measureValue, err := strconv.Atoi(row[measureValuesIdx])
 		if err != nil {
 			continue // Skip non-integer values
 		}
 
-		if measureValue >= minVal && measureValue <= maxVal {
-			records = append(records, Record{
-				Page:          page,
-				MeasureValues: measureValue,
-			})
-		}
+		records = append(records, Record{
+			Page:          page,
+			MeasureValues: measureValue,
+		})
 	}
 
 	// Report skipped URLs
@@ -172,11 +170,30 @@ func processCSV(inputPath string, minVal, maxVal int) ([]Record, error) {
 	return records, nil
 }
 
-func writeOutput(records []Record, outputPath, rangeStr string) error {
-	// Sort by Measure Values (lowest to highest)
+func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank int) error {
+	// Sort by Measure Values (highest to lowest) to establish ranking
 	sort.Slice(records, func(i, j int) bool {
-		return records[i].MeasureValues < records[j].MeasureValues
+		return records[i].MeasureValues > records[j].MeasureValues
 	})
+
+	// Slice to get only the entries within the specified rank range
+	// minRank and maxRank are 1-based, so we need to convert to 0-based indices
+	startIdx := minRank - 1
+	endIdx := maxRank
+
+	// Ensure we don't go out of bounds
+	if startIdx < 0 {
+		startIdx = 0
+	}
+	if endIdx > len(records) {
+		endIdx = len(records)
+	}
+	if startIdx >= len(records) {
+		// No records in this range
+		records = []Record{}
+	} else {
+		records = records[startIdx:endIdx]
+	}
 
 	// Determine output directory and filename
 	var outputDir, filename string
@@ -208,10 +225,11 @@ func writeOutput(records []Record, outputPath, rangeStr string) error {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Write records (Measure Values, Page)
-	for _, record := range records {
+	// Write records with rank number and URL
+	for i, record := range records {
+		rank := startIdx + i + 1 // Calculate the actual rank
 		if err := writer.Write([]string{
-			strconv.Itoa(record.MeasureValues),
+			strconv.Itoa(rank),
 			record.Page,
 		}); err != nil {
 			return fmt.Errorf("failed to write record: %v", err)

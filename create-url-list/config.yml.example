@@ -1,0 +1,20 @@
+# Configuration file for create-url-list
+# Copy this file to config.yml and customize as needed
+
+# List of URLs to ignore from the output
+# These URLs will be filtered out before ranking, so they won't create gaps
+# in the ranking numbers
+ignore_urls:
+  - www.example.com/page-to-ignore
+  - www.example.com/another-page-to-ignore
+
+# Whether to show pageviews as a third column in the output
+# Default: false (output only rank and URL)
+# When true: output rank, URL, and pageviews
+show_pageviews: false
+
+# Whether to include headers in the output CSV
+# Default: false (no headers)
+# When true: adds "Rank", "Page", and optionally "Number of Page Views" as headers
+show_headers: false
+

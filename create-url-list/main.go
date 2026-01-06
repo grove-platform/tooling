@@ -9,11 +9,19 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Record struct {
 	Page          string
 	MeasureValues int
+}
+
+type Config struct {
+	IgnoreURLs    []string `yaml:"ignore_urls"`
+	ShowPageviews bool     `yaml:"show_pageviews"`
+	ShowHeaders   bool     `yaml:"show_headers"`
 }
 
 func main() {
@@ -26,18 +34,30 @@ func main() {
 func run() error {
 	// Parse command-line arguments
 	if len(os.Args) < 2 {
-		return fmt.Errorf("usage: %s <csv-file-path> [range] [output-path]", os.Args[0])
+		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
 	}
 
-	inputPath := os.Args[1]
+	// Check for --quiet flag
+	quiet := false
+	args := os.Args[1:]
+	if len(args) > 0 && args[0] == "--quiet" {
+		quiet = true
+		args = args[1:] // Remove --quiet from args
+	}
+
+	if len(args) < 1 {
+		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
+	}
+
+	inputPath := args[0]
 	rangeStr := "1-250" // default range
 	outputPath := ""
 
-	if len(os.Args) >= 3 {
-		rangeStr = os.Args[2]
+	if len(args) >= 2 {
+		rangeStr = args[1]
 	}
-	if len(os.Args) >= 4 {
-		outputPath = os.Args[3]
+	if len(args) >= 3 {
+		outputPath = args[2]
 	}
 
 	// Parse range
@@ -51,15 +71,31 @@ func run() error {
 		return fmt.Errorf("input file does not exist: %s", inputPath)
 	}
 
+	// Load config (optional)
+	config, err := loadConfig("config.yml")
+	if err != nil {
+		// Config is optional, so we just log a warning if it fails
+		if !quiet {
+			fmt.Fprintf(os.Stderr, "Warning: Could not load config.yml: %v\n", err)
+		}
+		config = &Config{} // Use empty config
+	}
+
 	// Read and process CSV
-	records, err := processCSV(inputPath)
+	records, err := processCSV(inputPath, config.IgnoreURLs, quiet)
 	if err != nil {
 		return err
 	}
 
 	// Generate output
-	if err := writeOutput(records, outputPath, rangeStr, minVal, maxVal); err != nil {
+	outputFilePath, err := writeOutput(records, outputPath, rangeStr, minVal, maxVal, config.ShowPageviews, config.ShowHeaders)
+	if err != nil {
 		return err
+	}
+
+	// Print success message
+	if !quiet {
+		fmt.Printf("Successfully parsed input file `%s` and created output file at `%s`\n", inputPath, outputFilePath)
 	}
 
 	return nil
@@ -88,7 +124,28 @@ func parseRange(rangeStr string) (int, int, error) {
 	return min, max, nil
 }
 
-func processCSV(inputPath string) ([]Record, error) {
+func loadConfig(configPath string) (*Config, error) {
+	// Check if config file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("config file does not exist: %s", configPath)
+	}
+
+	// Read config file
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %v", err)
+	}
+
+	// Parse YAML
+	var config Config
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse config file: %v", err)
+	}
+
+	return &config, nil
+}
+
+func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %v", err)
@@ -121,9 +178,16 @@ func processCSV(inputPath string) ([]Record, error) {
 		return nil, fmt.Errorf("missing required columns (Page, Measure Names, Measure Values)")
 	}
 
+	// Create a map for fast lookup of ignored URLs
+	ignoreMap := make(map[string]bool)
+	for _, url := range ignoreURLs {
+		ignoreMap[url] = true
+	}
+
 	// Read and collect all Pageviews records
 	var records []Record
 	var skippedURLs []string
+	var ignoredURLs []string
 	for {
 		row, err := reader.Read()
 		if err != nil {
@@ -147,6 +211,12 @@ func processCSV(inputPath string) ([]Record, error) {
 			continue
 		}
 
+		// Check if URL should be ignored
+		if ignoreMap[page] {
+			ignoredURLs = append(ignoredURLs, page)
+			continue
+		}
+
 		// Parse Measure Values
 		measureValue, err := strconv.Atoi(row[measureValuesIdx])
 		if err != nil {
@@ -160,9 +230,17 @@ func processCSV(inputPath string) ([]Record, error) {
 	}
 
 	// Report skipped URLs
-	if len(skippedURLs) > 0 {
+	if !quiet && len(skippedURLs) > 0 {
 		fmt.Fprintf(os.Stderr, "Warning: Skipped %d URL(s) that do not match expected structure (www.*):\n", len(skippedURLs))
 		for _, url := range skippedURLs {
+			fmt.Fprintf(os.Stderr, "  - %s\n", url)
+		}
+	}
+
+	// Report ignored URLs
+	if !quiet && len(ignoredURLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Info: Ignored %d URL(s) from config:\n", len(ignoredURLs))
+		for _, url := range ignoredURLs {
 			fmt.Fprintf(os.Stderr, "  - %s\n", url)
 		}
 	}
@@ -170,7 +248,7 @@ func processCSV(inputPath string) ([]Record, error) {
 	return records, nil
 }
 
-func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank int) error {
+func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank int, showPageviews, showHeaders bool) (string, error) {
 	// Sort by Measure Values (highest to lowest) to establish ranking
 	sort.Slice(records, func(i, j int) bool {
 		return records[i].MeasureValues > records[j].MeasureValues
@@ -211,30 +289,53 @@ func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank
 
 	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		return fmt.Errorf("failed to create output directory: %v", err)
+		return "", fmt.Errorf("failed to create output directory: %v", err)
 	}
 
 	// Create output file
 	outputFilePath := filepath.Join(outputDir, filename)
 	file, err := os.Create(outputFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %v", err)
+		return "", fmt.Errorf("failed to create output file: %v", err)
 	}
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Write records with rank number and URL
-	for i, record := range records {
-		rank := startIdx + i + 1 // Calculate the actual rank
-		if err := writer.Write([]string{
-			strconv.Itoa(rank),
-			record.Page,
-		}); err != nil {
-			return fmt.Errorf("failed to write record: %v", err)
+	// Write headers if enabled
+	if showHeaders {
+		var headers []string
+		if showPageviews {
+			headers = []string{"Rank", "Page", "Number of Page Views"}
+		} else {
+			headers = []string{"Rank", "Page"}
+		}
+		if err := writer.Write(headers); err != nil {
+			return "", fmt.Errorf("failed to write headers: %v", err)
 		}
 	}
 
-	return nil
+	// Write records with rank number, URL, and optionally pageviews
+	for i, record := range records {
+		rank := startIdx + i + 1 // Calculate the actual rank
+		var row []string
+		if showPageviews {
+			row = []string{
+				strconv.Itoa(rank),
+				record.Page,
+				strconv.Itoa(record.MeasureValues),
+			}
+		} else {
+			row = []string{
+				strconv.Itoa(rank),
+				record.Page,
+			}
+		}
+		if err := writer.Write(row); err != nil {
+			return "", fmt.Errorf("failed to write record: %v", err)
+		}
+	}
+
+	return outputFilePath, nil
 }

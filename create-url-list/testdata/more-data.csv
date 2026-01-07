@@ -1,0 +1,15 @@
+Page,Page Subsite,Measure Names,Measure Values,Min. Aux
+www.example.com/docs/databases/installation/,Docs,PT Within 7 Days,14,1
+www.example.com/docs/databases/installation/,Docs,FT Within 1 Day,2145,1
+www.example.com/docs/databases/installation/,Docs,Reg Within 24 Hours,1916,1
+www.example.com/docs/databases/installation/,Docs,Inquiry Within 24 Hours Became SQL,0,1
+www.example.com/docs/databases/installation/,Docs,Inquiry Within 24 Hours Became MQL,4,1
+www.example.com/docs/databases/installation/,Docs,Inquiry Within 24 Hours,4996,1
+www.example.com/docs/databases/installation/,Docs,Exits,7111,1
+www.example.com/docs/databases/installation/,Docs,New Users,20192,1
+www.example.com/docs/databases/installation/,Docs,Sessions,41975,1
+www.example.com/docs/databases/installation/,Docs,Users,37504,1
+www.example.com/docs/databases/installation/,Docs,Bounces,3898,1
+www.example.com/docs/databases/installation/,Docs,Organic Entrances,15760,1
+www.example.com/docs/databases/installation/,Docs,Entrances,20195,1
+www.example.com/docs/control-plane/sdk/deprecation/,Docs,Pageviews,311105,1

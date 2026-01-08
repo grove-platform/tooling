@@ -38,7 +38,7 @@ func PerformAggregation(db *mongo.Database, ctx context.Context) {
 	}
 	//substringToFindInCodeExamples := "defaultauthdb"
 	//substringToFindInPageURL := "code-examples"
-	monthForReporting := time.November
+	monthForReporting := time.January
 
 	for _, collectionName := range collectionNames {
 		//simpleMap = aggregations.GetCategoryCounts(db, collectionName, simpleMap, ctx)

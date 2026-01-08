@@ -56,10 +56,12 @@ func main() {
 	codeExampleRemovedRegex := regexp.MustCompile(`Code example removed: Page ID: (.+), (\d+) code examples removed`)
 	codeExampleCreatedRegex := regexp.MustCompile(`Code example created: Page ID: (.+), (\d+) new code examples added`)
 	appliedUsageRegex := regexp.MustCompile(`Applied usage example added: Page ID: (.+), (\d+) new applied usage examples added`)
+	claimedAppliedUsageRegex := regexp.MustCompile(`New applied usage examples for (.+): (\d+)`)
 
 	removedPages := make(map[string]PageEvent)
 	createdPages := make(map[string]PageEvent)
 	appliedUsageMap := make(map[string]AppliedUsageExample)
+	claimedAppliedUsageByProject := make(map[string]int)
 
 	currentProject := ""
 
@@ -133,6 +135,13 @@ func main() {
 				Count:   count,
 			}
 		}
+
+		// Parse claimed applied usage examples per project
+		if matches := claimedAppliedUsageRegex.FindStringSubmatch(line); matches != nil {
+			project := matches[1]
+			count, _ := strconv.Atoi(matches[2])
+			claimedAppliedUsageByProject[project] = count
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -185,7 +194,7 @@ func main() {
 	}
 
 	// Print results
-	printResults(movedPages, trulyCreatedPages, trulyRemovedPages, appliedUsageMap)
+	printResults(movedPages, trulyCreatedPages, trulyRemovedPages, appliedUsageMap, claimedAppliedUsageByProject)
 }
 
 // isPageMoved checks if a removed page and created page represent the same page that was moved
@@ -213,7 +222,7 @@ func isPageMoved(removedID, createdID string, removedCodeExamples, createdCodeEx
 	return false
 }
 
-func printResults(movedPages []MovedPage, trulyCreatedPages []PageEvent, trulyRemovedPages []PageEvent, appliedUsageMap map[string]AppliedUsageExample) {
+func printResults(movedPages []MovedPage, trulyCreatedPages []PageEvent, trulyRemovedPages []PageEvent, appliedUsageMap map[string]AppliedUsageExample, claimedAppliedUsageByProject map[string]int) {
 	fmt.Println("=== MOVED PAGES ===")
 	if len(movedPages) == 0 {
 		fmt.Println("No moved pages found.")
@@ -276,5 +285,18 @@ func printResults(movedPages []MovedPage, trulyCreatedPages []PageEvent, trulyRe
 			fmt.Printf("APPLIED USAGE [%s]: %s (%d applied usage examples)\n", usage.Project, usage.PageID, usage.Count)
 		}
 		fmt.Printf("\nTotal new applied usage examples: %d\n", totalNewAppliedUsage)
+	}
+
+	// Print claimed applied usage examples per project from the logs
+	fmt.Println("\n=== CLAIMED APPLIED USAGE EXAMPLES PER PROJECT ===")
+	if len(claimedAppliedUsageByProject) == 0 {
+		fmt.Println("No claimed applied usage examples found in logs.")
+	} else {
+		totalClaimed := 0
+		for project, count := range claimedAppliedUsageByProject {
+			fmt.Printf("CLAIMED [%s]: %d applied usage examples\n", project, count)
+			totalClaimed += count
+		}
+		fmt.Printf("\nTotal claimed applied usage examples: %d\n", totalClaimed)
 	}
 }

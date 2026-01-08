@@ -120,8 +120,10 @@ func getBackupDbNames(client *mongo.Client, ctx context.Context) []string {
 
 // Parse the dates from the backup database names to find the oldest backup database.
 func findOldestBackup(backupNames []string) string {
-	// Define a reference year (we need a year to work with Go's time package)
-	const year = 2025 // Arbitrary year for comparison purposes
+	// Get the current date to determine the year for each backup
+	now := time.Now()
+	currentMonth := now.Month()
+	currentYear := now.Year()
 
 	// Variables to track the oldest date and its corresponding string
 	var oldestDate time.Time
@@ -149,6 +151,13 @@ func findOldestBackup(backupNames []string) string {
 		if err != nil {
 			fmt.Println("Error parsing month:", err)
 			continue
+		}
+
+		// Determine the year for this backup
+		// If the backup month is after the current month, it must be from the previous year
+		year := currentYear
+		if month > currentMonth {
+			year = currentYear - 1
 		}
 
 		// Create a time.Time object for the given month and day

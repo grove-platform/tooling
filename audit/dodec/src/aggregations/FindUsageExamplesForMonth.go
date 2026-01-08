@@ -17,7 +17,7 @@ import (
 // track the product and sub-product in the types.NewAppliedUsageExampleCounterByProductSubProduct
 func FindUsageExamplesForMonth(db *mongo.Database, collectionName string, productSubProductCounter types.NewAppliedUsageExampleCounterByProductSubProduct, monthForReporting time.Month, ctx context.Context) types.NewAppliedUsageExampleCounterByProductSubProduct {
 	// Target a specific month (example for November 2025):
-	targetYear := 2025
+	targetYear := 2026
 	monthStart := time.Date(targetYear, monthForReporting, 1, 0, 0, 0, 0, time.UTC)
 	monthEnd := monthStart.AddDate(0, 1, 0) // First day of next month
 	// Define the aggregation pipeline

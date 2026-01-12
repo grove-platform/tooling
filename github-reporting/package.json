@@ -1,0 +1,27 @@
+{
+  "name": "github-reporting",
+  "version": "1.0.0",
+  "description": "Pull reports from GitHub data stored in MongoDB Atlas.",
+  "repository": {
+    "type": "git",
+    "url": "github.com/grove-platform/tooling"
+  },
+  "license": "MIT",
+  "author": "MongoDB Developer Docs",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "github-reporting": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "export": "node index.js export",
+    "export-config": "node index.js export-config",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "csv-writer": "^1.6.0",
+    "mongodb": "7.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "startDate": "2026-01-01",
+  "endDate": "2026-01-13",
+  "projects": [
+    { "owner": "mongodb", "repo": "sample-app-java-mflix" },
+    { "owner": "mongodb", "repo": "sample-app-nodejs-mflix" },
+    { "owner": "mongodb", "repo": "sample-app-python-mflix" }
+  ],
+  "output": "output"
+}

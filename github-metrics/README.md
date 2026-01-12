@@ -156,44 +156,17 @@ The cronjob is **scheduled to run weekly on Mondays at 8:00 AM UTC** (`0 8 * * 1
 
 The last run timestamp is stored in a persistent volume (`/data/last-run.json`) that survives between cronjob executions.
 
-### Required Kubernetes Secrets
-
-The cronjob requires two Kubernetes secrets to be created in the `docs` namespace:
-
-1. **github-token**: Contains the GitHub Personal Access Token
-   ```bash
-   kubectl create secret generic github-token \
-     --from-literal=GITHUB_TOKEN='your-github-token' \
-     -n docs
-   ```
-
-2. **atlas-connection-string**: Contains the MongoDB Atlas connection string
-   ```bash
-   kubectl create secret generic atlas-connection-string \
-     --from-literal=ATLAS_CONNECTION_STRING='your-connection-string' \
-     -n docs
-   ```
-
-> **Note**: These secrets should already exist in the production environment. Contact the DevDocs team if you need to create or update them.
-
 ### Deployment Process
 
-The deployment is fully automated via Drone CI/CD:
+The deployment is fully automated via Drone CI/CD with the following steps:
 
-1. **Test Pipeline** (`github-metrics-test`):
-   - Checks if files in `github-metrics/` directory changed
-   - Validates dependencies with `npm ci`
-   - Runs on pull requests and pushes to main
+1. **Check Changes**: Verifies if files in `github-metrics/` directory changed
+2. **Test**: Validates dependencies with `npm ci`
+3. **Build**: Builds Docker image using Kaniko and publishes to ECR
+4. **Deploy**: Deploys to production Kanopy cluster using Helm
+5. **Notify**: Sends Slack notification on success or failure
 
-2. **Build Pipeline** (`github-metrics-build`):
-   - Builds Docker image using Kaniko
-   - Publishes to ECR: `795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics`
-   - Tags with git commit SHA and `latest`
-
-3. **Deploy Pipeline** (`github-metrics-deploy`):
-   - Deploys to production Kanopy cluster using Helm
-   - Uses the `mongodb/cronjobs` chart (version 1.21.2)
-   - Deploys to the `docs` namespace
+The pipeline only runs on pushes to the `main` branch and skips if no github-metrics files changed.
 
 ### Manual Deployment
 

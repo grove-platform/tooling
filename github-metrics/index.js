@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises';
 import { getGitHubMetrics } from "./get-github-metrics.js";
 import { addMetricsToAtlas } from "./write-to-db.js";
 import { RepoDetails } from './RepoDetails.js'; // Import the RepoDetails class
+import { shouldRun, updateLastRun } from './check-last-run.js';
 
 /* To change which repos to track metrics for, update the `repo-details.json` file.
 To track metrics for a new repo, add a new entry with the owner and repo name.
@@ -36,13 +37,33 @@ async function processRepos() {
         }
 
         await addMetricsToAtlas(metricsDocs);
+
+        // Update the last run timestamp after successful completion
+        updateLastRun();
     } catch (error) {
         console.error('Error processing repos:', error);
+        throw error; // Re-throw to be caught by main handler
     }
 }
 
-// Call the function
-processRepos().catch(error => {
-    console.error('Fatal error:', error);
+// Main execution
+async function main() {
+    console.log('🚀 GitHub Metrics Collection Starting...');
+
+    // Check if enough time has passed since last run
+    if (!shouldRun()) {
+        console.log('⏭️  Exiting - not enough time has passed since last run');
+        process.exit(0);
+    }
+
+    // Process repos and collect metrics
+    await processRepos();
+
+    console.log('✅ GitHub Metrics Collection Complete');
+}
+
+// Call the main function
+main().catch(error => {
+    console.error('❌ Fatal error:', error);
     process.exit(1);
 });

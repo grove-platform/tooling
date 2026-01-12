@@ -1,0 +1,35 @@
+---
+# `image` can be skipped if the values are being set in your .drone.yml file
+image:
+  repository: 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics
+  tag: latest
+
+# global secrets are references to k8s Secrets
+globalEnvSecrets:
+  GITHUB_TOKEN: github-token
+  ATLAS_CONNECTION_STRING: atlas-connection-string
+
+cronJobs:
+- name: github-metrics-collection
+  # Run weekly on Mondays at 8am UTC
+  # The application checks if it ran in the last 14 days and skips if so
+  # Cron format: minute hour day-of-month month day-of-week
+  # 0 = Sunday, 1 = Monday, etc.
+  schedule: "0 8 * * 1"
+  command:
+  - node
+  - index.js
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Persistent volume to store last run timestamp
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /data

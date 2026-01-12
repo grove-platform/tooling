@@ -174,7 +174,7 @@ The cronjob requires two Kubernetes secrets to be created in the `docs` namespac
      -n docs
    ```
 
-> **Note**: These secrets should already exist in the production environment. Contact the DevOps team if you need to create or update them.
+> **Note**: These secrets should already exist in the production environment. Contact the DevDocs team if you need to create or update them.
 
 ### Deployment Process
 

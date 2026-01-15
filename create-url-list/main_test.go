@@ -146,9 +146,9 @@ func TestWriteOutput(t *testing.T) {
 		{
 			name: "write top 3 records",
 			records: []Record{
-				{Page: "www.example.com/page1", MeasureValues: 100},
-				{Page: "www.example.com/page2", MeasureValues: 50},
-				{Page: "www.example.com/page3", MeasureValues: 200},
+				{Page: "www.example.com/page1", MeasureValues: 100, Rank: 2},
+				{Page: "www.example.com/page2", MeasureValues: 50, Rank: 3},
+				{Page: "www.example.com/page3", MeasureValues: 200, Rank: 1},
 			},
 			outputPath: "",
 			rangeStr:   "1-3",
@@ -159,7 +159,7 @@ func TestWriteOutput(t *testing.T) {
 		{
 			name: "write single record",
 			records: []Record{
-				{Page: "www.example.com/page1", MeasureValues: 100},
+				{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 			},
 			outputPath: "test-output/custom.csv",
 			rangeStr:   "1-1",
@@ -211,10 +211,10 @@ func TestWriteOutput_Sorting(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "sorted.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page3", MeasureValues: 300},
-		{Page: "www.example.com/page1", MeasureValues: 100},
-		{Page: "www.example.com/page2", MeasureValues: 200},
-		{Page: "www.example.com/page4", MeasureValues: 50},
+		{Page: "www.example.com/page3", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 4},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
+		{Page: "www.example.com/page4", MeasureValues: 50, Rank: 3},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-4", 1, 4, false, false)
@@ -239,9 +239,9 @@ func TestWriteOutput_Sorting(t *testing.T) {
 		t.Errorf("First line should contain rank 1 and page3 URL, got: %s", lines[0])
 	}
 
-	// Verify last data line has rank 4 (lowest pageviews = 50)
-	if !contains(lines[3], "4,www.example.com/page4") {
-		t.Errorf("Last line should contain rank 4 and page4 URL, got: %s", lines[3])
+	// Verify last data line has rank 3 (page4 with rank 3)
+	if !contains(lines[3], "3,www.example.com/page4") {
+		t.Errorf("Last line should contain rank 3 and page4 URL, got: %s", lines[3])
 	}
 }
 
@@ -251,7 +251,7 @@ func TestWriteOutput_NoHeaders(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "no-headers.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-1", 1, 1, false, false)
@@ -372,7 +372,7 @@ func TestWriteOutput_ColumnOrder(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "column-order.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-1", 1, 1, false, false)
@@ -589,6 +589,52 @@ www.example.com/manual/tutorial,Pageviews,250
 	}
 }
 
+// TestProcessCSV_RankPreservation tests that original ranks are preserved after filtering
+func TestProcessCSV_RankPreservation(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "rank-preservation.csv")
+
+	// Create test CSV where filtering will skip some high-ranked items
+	content := `Page,Measure Names,Measure Values
+www.example.com/blog/post1,Pageviews,1000
+www.example.com/blog/post2,Pageviews,900
+www.example.com/manual/page1,Pageviews,800
+www.example.com/blog/post3,Pageviews,700
+www.example.com/manual/page2,Pageviews,600
+www.example.com/blog/post4,Pageviews,500
+`
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Filter for /manual/ URLs only
+	records, err := processCSV(tmpFile, nil, "/manual/", false)
+	if err != nil {
+		t.Fatalf("processCSV() unexpected error: %v", err)
+	}
+
+	// Should get 2 records
+	if len(records) != 2 {
+		t.Fatalf("Expected 2 records, got %d", len(records))
+	}
+
+	// Verify ranks are preserved from the original dataset
+	// manual/page1 should be rank 3 (not rank 1)
+	if records[0].Page == "www.example.com/manual/page1" && records[0].Rank != 3 {
+		t.Errorf("manual/page1 should have rank 3, got %d", records[0].Rank)
+	}
+
+	// manual/page2 should be rank 5 (not rank 2)
+	if records[1].Page == "www.example.com/manual/page2" && records[1].Rank != 5 {
+		t.Errorf("manual/page2 should have rank 5, got %d", records[1].Rank)
+	}
+
+	// Verify the records are in the correct order (by rank)
+	if records[0].Rank > records[1].Rank {
+		t.Errorf("Records should be ordered by rank, got ranks %d and %d", records[0].Rank, records[1].Rank)
+	}
+}
+
 // TestWriteOutput_ShowPageviews tests that pageviews column is added when enabled
 func TestWriteOutput_ShowPageviews(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -611,9 +657,9 @@ func TestWriteOutput_ShowPageviews(t *testing.T) {
 	}
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 300},
-		{Page: "www.example.com/page2", MeasureValues: 200},
-		{Page: "www.example.com/page3", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
+		{Page: "www.example.com/page3", MeasureValues: 100, Rank: 3},
 	}
 
 	for _, tt := range tests {
@@ -672,8 +718,8 @@ func TestWriteOutput_ShowHeaders(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 300},
-		{Page: "www.example.com/page2", MeasureValues: 200},
+		{Page: "www.example.com/page1", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
 	}
 
 	tests := []struct {

@@ -11,18 +11,19 @@ go build
 ## Usage
 
 ```bash
-./create-url-list [--quiet] <csv-file-path> [range] [output-path]
+./create-url-list [--quiet] [--contains <substring>] <csv-file-path> [range] [output-path]
 ```
 
 ### Arguments
 
 1. **--quiet** (optional): Suppress all informational output (warnings, info messages, and success messages). Only errors will be displayed. Useful when using this tool in pipelines.
-2. **csv-file-path** (required): Path to the input CSV file
-3. **range** (optional): Rank range in format `min-max` (e.g., `1-50`). Default: `1-250`
+2. **--contains** (optional): Filter URLs to only include those containing the specified substring. For example, `--contains /manual/` will only include URLs that contain `/manual/` in their path.
+3. **csv-file-path** (required): Path to the input CSV file
+4. **range** (optional): Rank range in format `min-max` (e.g., `1-50`). Default: `1-250`
    - Specifies which ranked entries to include in the output
    - `1-50` means "get the top 50 pages by pageviews"
    - `51-100` means "get pages ranked 51-100 by pageviews"
-4. **output-path** (optional): Custom output file path. Default: `output/YYYY-MM-DD_HH-MM-SS_range.csv`
+5. **output-path** (optional): Custom output file path. Default: `output/YYYY-MM-DD_HH-MM-SS_range.csv`
 
 ### Examples
 
@@ -39,8 +40,17 @@ go build
 # Specify custom output path
 ./create-url-list data.csv 1-100 results/top-100.csv
 
+# Filter for URLs containing "/manual/" (e.g., database manual documentation)
+./create-url-list --contains /manual/ data.csv
+
+# Filter for URLs containing "/manual/" and get top 50
+./create-url-list --contains /manual/ data.csv 1-50
+
 # Use in a pipeline with quiet mode (no informational output)
 ./create-url-list --quiet data.csv 1-50 output.csv
+
+# Combine multiple flags: quiet mode with URL filtering
+./create-url-list --quiet --contains /manual/ data.csv 1-50 output.csv
 ```
 
 ## Input Requirements

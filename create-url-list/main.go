@@ -34,19 +34,32 @@ func main() {
 func run() error {
 	// Parse command-line arguments
 	if len(os.Args) < 2 {
-		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
+		return fmt.Errorf("usage: %s [--quiet] [--contains <substring>] <csv-file-path> [range] [output-path]", os.Args[0])
 	}
 
-	// Check for --quiet flag
+	// Check for --quiet and --contains flags
 	quiet := false
+	containsFilter := ""
 	args := os.Args[1:]
-	if len(args) > 0 && args[0] == "--quiet" {
-		quiet = true
-		args = args[1:] // Remove --quiet from args
+
+	// Process flags
+	for len(args) > 0 && strings.HasPrefix(args[0], "--") {
+		if args[0] == "--quiet" {
+			quiet = true
+			args = args[1:] // Remove --quiet from args
+		} else if args[0] == "--contains" {
+			if len(args) < 2 {
+				return fmt.Errorf("--contains flag requires a substring argument")
+			}
+			containsFilter = args[1]
+			args = args[2:] // Remove --contains and its argument from args
+		} else {
+			return fmt.Errorf("unknown flag: %s", args[0])
+		}
 	}
 
 	if len(args) < 1 {
-		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
+		return fmt.Errorf("usage: %s [--quiet] [--contains <substring>] <csv-file-path> [range] [output-path]", os.Args[0])
 	}
 
 	inputPath := args[0]
@@ -82,7 +95,7 @@ func run() error {
 	}
 
 	// Read and process CSV
-	records, err := processCSV(inputPath, config.IgnoreURLs, quiet)
+	records, err := processCSV(inputPath, config.IgnoreURLs, containsFilter, quiet)
 	if err != nil {
 		return err
 	}
@@ -145,7 +158,7 @@ func loadConfig(configPath string) (*Config, error) {
 	return &config, nil
 }
 
-func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, error) {
+func processCSV(inputPath string, ignoreURLs []string, containsFilter string, quiet bool) ([]Record, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %v", err)
@@ -188,6 +201,7 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 	var records []Record
 	var skippedURLs []string
 	var ignoredURLs []string
+	var filteredURLs []string
 	for {
 		row, err := reader.Read()
 		if err != nil {
@@ -217,6 +231,12 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 			continue
 		}
 
+		// Filter by contains substring if specified
+		if containsFilter != "" && !strings.Contains(page, containsFilter) {
+			filteredURLs = append(filteredURLs, page)
+			continue
+		}
+
 		// Parse Measure Values
 		measureValue, err := strconv.Atoi(row[measureValuesIdx])
 		if err != nil {
@@ -241,6 +261,14 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 	if !quiet && len(ignoredURLs) > 0 {
 		fmt.Fprintf(os.Stderr, "Info: Ignored %d URL(s) from config:\n", len(ignoredURLs))
 		for _, url := range ignoredURLs {
+			fmt.Fprintf(os.Stderr, "  - %s\n", url)
+		}
+	}
+
+	// Report filtered URLs
+	if !quiet && len(filteredURLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Info: Filtered out %d URL(s) not containing '%s':\n", len(filteredURLs), containsFilter)
+		for _, url := range filteredURLs {
 			fmt.Fprintf(os.Stderr, "  - %s\n", url)
 		}
 	}

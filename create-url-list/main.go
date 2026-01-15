@@ -16,6 +16,7 @@ import (
 type Record struct {
 	Page          string
 	MeasureValues int
+	Rank          int // Original rank before any filtering
 }
 
 type Config struct {
@@ -34,19 +35,32 @@ func main() {
 func run() error {
 	// Parse command-line arguments
 	if len(os.Args) < 2 {
-		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
+		return fmt.Errorf("usage: %s [--quiet] [--contains <substring>] <csv-file-path> [range] [output-path]", os.Args[0])
 	}
 
-	// Check for --quiet flag
+	// Check for --quiet and --contains flags
 	quiet := false
+	containsFilter := ""
 	args := os.Args[1:]
-	if len(args) > 0 && args[0] == "--quiet" {
-		quiet = true
-		args = args[1:] // Remove --quiet from args
+
+	// Process flags
+	for len(args) > 0 && strings.HasPrefix(args[0], "--") {
+		if args[0] == "--quiet" {
+			quiet = true
+			args = args[1:] // Remove --quiet from args
+		} else if args[0] == "--contains" {
+			if len(args) < 2 {
+				return fmt.Errorf("--contains flag requires a substring argument")
+			}
+			containsFilter = args[1]
+			args = args[2:] // Remove --contains and its argument from args
+		} else {
+			return fmt.Errorf("unknown flag: %s", args[0])
+		}
 	}
 
 	if len(args) < 1 {
-		return fmt.Errorf("usage: %s [--quiet] <csv-file-path> [range] [output-path]", os.Args[0])
+		return fmt.Errorf("usage: %s [--quiet] [--contains <substring>] <csv-file-path> [range] [output-path]", os.Args[0])
 	}
 
 	inputPath := args[0]
@@ -82,7 +96,7 @@ func run() error {
 	}
 
 	// Read and process CSV
-	records, err := processCSV(inputPath, config.IgnoreURLs, quiet)
+	records, err := processCSV(inputPath, config.IgnoreURLs, containsFilter, quiet)
 	if err != nil {
 		return err
 	}
@@ -145,7 +159,7 @@ func loadConfig(configPath string) (*Config, error) {
 	return &config, nil
 }
 
-func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, error) {
+func processCSV(inputPath string, ignoreURLs []string, containsFilter string, quiet bool) ([]Record, error) {
 	file, err := os.Open(inputPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %v", err)
@@ -184,8 +198,8 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 		ignoreMap[url] = true
 	}
 
-	// Read and collect all Pageviews records
-	var records []Record
+	// Read and collect all Pageviews records (before filtering by contains)
+	var allRecords []Record
 	var skippedURLs []string
 	var ignoredURLs []string
 	for {
@@ -223,10 +237,31 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 			continue // Skip non-integer values
 		}
 
-		records = append(records, Record{
+		allRecords = append(allRecords, Record{
 			Page:          page,
 			MeasureValues: measureValue,
 		})
+	}
+
+	// Sort all records by pageviews (highest to lowest) to establish true ranking
+	sort.Slice(allRecords, func(i, j int) bool {
+		return allRecords[i].MeasureValues > allRecords[j].MeasureValues
+	})
+
+	// Assign ranks to all records
+	for i := range allRecords {
+		allRecords[i].Rank = i + 1
+	}
+
+	// Now filter by contains substring if specified
+	var records []Record
+	var filteredURLs []string
+	for _, record := range allRecords {
+		if containsFilter != "" && !strings.Contains(record.Page, containsFilter) {
+			filteredURLs = append(filteredURLs, record.Page)
+			continue
+		}
+		records = append(records, record)
 	}
 
 	// Report skipped URLs
@@ -245,33 +280,27 @@ func processCSV(inputPath string, ignoreURLs []string, quiet bool) ([]Record, er
 		}
 	}
 
+	// Report filtered URLs
+	if !quiet && len(filteredURLs) > 0 {
+		fmt.Fprintf(os.Stderr, "Info: Filtered out %d URL(s) not containing '%s':\n", len(filteredURLs), containsFilter)
+		for _, url := range filteredURLs {
+			fmt.Fprintf(os.Stderr, "  - %s\n", url)
+		}
+	}
+
 	return records, nil
 }
 
 func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank int, showPageviews, showHeaders bool) (string, error) {
-	// Sort by Measure Values (highest to lowest) to establish ranking
-	sort.Slice(records, func(i, j int) bool {
-		return records[i].MeasureValues > records[j].MeasureValues
-	})
-
-	// Slice to get only the entries within the specified rank range
-	// minRank and maxRank are 1-based, so we need to convert to 0-based indices
-	startIdx := minRank - 1
-	endIdx := maxRank
-
-	// Ensure we don't go out of bounds
-	if startIdx < 0 {
-		startIdx = 0
+	// Records are already sorted and have ranks assigned
+	// Filter to get only the entries within the specified rank range
+	var filteredRecords []Record
+	for _, record := range records {
+		if record.Rank >= minRank && record.Rank <= maxRank {
+			filteredRecords = append(filteredRecords, record)
+		}
 	}
-	if endIdx > len(records) {
-		endIdx = len(records)
-	}
-	if startIdx >= len(records) {
-		// No records in this range
-		records = []Record{}
-	} else {
-		records = records[startIdx:endIdx]
-	}
+	records = filteredRecords
 
 	// Determine output directory and filename
 	var outputDir, filename string
@@ -317,18 +346,17 @@ func writeOutput(records []Record, outputPath, rangeStr string, minRank, maxRank
 	}
 
 	// Write records with rank number, URL, and optionally pageviews
-	for i, record := range records {
-		rank := startIdx + i + 1 // Calculate the actual rank
+	for _, record := range records {
 		var row []string
 		if showPageviews {
 			row = []string{
-				strconv.Itoa(rank),
+				strconv.Itoa(record.Rank),
 				record.Page,
 				strconv.Itoa(record.MeasureValues),
 			}
 		} else {
 			row = []string{
-				strconv.Itoa(rank),
+				strconv.Itoa(record.Rank),
 				record.Page,
 			}
 		}

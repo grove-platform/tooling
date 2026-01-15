@@ -53,7 +53,7 @@ func TestParseRange(t *testing.T) {
 
 // TestProcessCSV_MissingColumns tests that processCSV returns an error when required columns are missing
 func TestProcessCSV_MissingColumns(t *testing.T) {
-	_, err := processCSV("testdata/missing-columns.csv", nil, false)
+	_, err := processCSV("testdata/missing-columns.csv", nil, "", false)
 	if err == nil {
 		t.Error("processCSV() expected error for missing columns, got nil")
 	}
@@ -65,7 +65,7 @@ func TestProcessCSV_MissingColumns(t *testing.T) {
 
 // TestProcessCSV_InvalidURL tests that processCSV skips URLs that don't start with www.
 func TestProcessCSV_InvalidURL(t *testing.T) {
-	records, err := processCSV("testdata/invalid-url.csv", nil, false)
+	records, err := processCSV("testdata/invalid-url.csv", nil, "", false)
 	if err != nil {
 		t.Errorf("processCSV() unexpected error: %v", err)
 	}
@@ -96,7 +96,7 @@ func TestProcessCSV_ValidFiltering(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			records, err := processCSV(tt.file, nil, false)
+			records, err := processCSV(tt.file, nil, "", false)
 			if err != nil {
 				t.Fatalf("processCSV() unexpected error: %v", err)
 			}
@@ -115,7 +115,7 @@ func TestProcessCSV_ValidFiltering(t *testing.T) {
 
 // TestProcessCSV_EmptyFile tests that processCSV handles empty CSV files
 func TestProcessCSV_EmptyFile(t *testing.T) {
-	records, err := processCSV("testdata/empty.csv", nil, false)
+	records, err := processCSV("testdata/empty.csv", nil, "", false)
 	if err != nil {
 		t.Fatalf("processCSV() unexpected error: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestProcessCSV_EmptyFile(t *testing.T) {
 
 // TestProcessCSV_FileNotFound tests that processCSV returns an error for non-existent files
 func TestProcessCSV_FileNotFound(t *testing.T) {
-	_, err := processCSV("testdata/nonexistent.csv", nil, false)
+	_, err := processCSV("testdata/nonexistent.csv", nil, "", false)
 	if err == nil {
 		t.Error("processCSV() expected error for non-existent file, got nil")
 	}
@@ -146,9 +146,9 @@ func TestWriteOutput(t *testing.T) {
 		{
 			name: "write top 3 records",
 			records: []Record{
-				{Page: "www.example.com/page1", MeasureValues: 100},
-				{Page: "www.example.com/page2", MeasureValues: 50},
-				{Page: "www.example.com/page3", MeasureValues: 200},
+				{Page: "www.example.com/page1", MeasureValues: 100, Rank: 2},
+				{Page: "www.example.com/page2", MeasureValues: 50, Rank: 3},
+				{Page: "www.example.com/page3", MeasureValues: 200, Rank: 1},
 			},
 			outputPath: "",
 			rangeStr:   "1-3",
@@ -159,7 +159,7 @@ func TestWriteOutput(t *testing.T) {
 		{
 			name: "write single record",
 			records: []Record{
-				{Page: "www.example.com/page1", MeasureValues: 100},
+				{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 			},
 			outputPath: "test-output/custom.csv",
 			rangeStr:   "1-1",
@@ -211,10 +211,10 @@ func TestWriteOutput_Sorting(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "sorted.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page3", MeasureValues: 300},
-		{Page: "www.example.com/page1", MeasureValues: 100},
-		{Page: "www.example.com/page2", MeasureValues: 200},
-		{Page: "www.example.com/page4", MeasureValues: 50},
+		{Page: "www.example.com/page3", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 4},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
+		{Page: "www.example.com/page4", MeasureValues: 50, Rank: 3},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-4", 1, 4, false, false)
@@ -239,9 +239,9 @@ func TestWriteOutput_Sorting(t *testing.T) {
 		t.Errorf("First line should contain rank 1 and page3 URL, got: %s", lines[0])
 	}
 
-	// Verify last data line has rank 4 (lowest pageviews = 50)
-	if !contains(lines[3], "4,www.example.com/page4") {
-		t.Errorf("Last line should contain rank 4 and page4 URL, got: %s", lines[3])
+	// Verify last data line has rank 3 (page4 with rank 3)
+	if !contains(lines[3], "3,www.example.com/page4") {
+		t.Errorf("Last line should contain rank 3 and page4 URL, got: %s", lines[3])
 	}
 }
 
@@ -251,7 +251,7 @@ func TestWriteOutput_NoHeaders(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "no-headers.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-1", 1, 1, false, false)
@@ -311,7 +311,7 @@ func splitLines(s string) []string {
 
 // TestProcessCSV_OnlyPageviewsFiltered tests that only Pageviews rows are included
 func TestProcessCSV_OnlyPageviewsFiltered(t *testing.T) {
-	records, err := processCSV("testdata/more-data.csv", nil, false)
+	records, err := processCSV("testdata/more-data.csv", nil, "", false)
 	if err != nil {
 		t.Fatalf("processCSV() unexpected error: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestProcessCSV_URLValidation(t *testing.T) {
 				t.Fatalf("Failed to create test file: %v", err)
 			}
 
-			records, err := processCSV(tmpFile, nil, false)
+			records, err := processCSV(tmpFile, nil, "", false)
 			if err != nil {
 				t.Errorf("processCSV() unexpected error for URL %q: %v", tt.url, err)
 			}
@@ -372,7 +372,7 @@ func TestWriteOutput_ColumnOrder(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "column-order.csv")
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 100, Rank: 1},
 	}
 
 	_, err := writeOutput(records, outputPath, "1-1", 1, 1, false, false)
@@ -403,7 +403,7 @@ func TestIntegration_EndToEnd(t *testing.T) {
 	outputPath := filepath.Join(tmpDir, "result.csv")
 
 	// Process the valid-with-filtering.csv file
-	records, err := processCSV("testdata/valid-with-filtering.csv", nil, false)
+	records, err := processCSV("testdata/valid-with-filtering.csv", nil, "", false)
 	if err != nil {
 		t.Fatalf("processCSV() unexpected error: %v", err)
 	}
@@ -458,7 +458,7 @@ www.example.com/page4,Pageviews,400
 
 	// Test with ignore list
 	ignoreURLs := []string{"www.example.com/page2", "www.example.com/page4"}
-	records, err := processCSV(tmpFile, ignoreURLs, false)
+	records, err := processCSV(tmpFile, ignoreURLs, "", false)
 	if err != nil {
 		t.Fatalf("processCSV() unexpected error: %v", err)
 	}
@@ -492,6 +492,149 @@ www.example.com/page4,Pageviews,400
 	}
 }
 
+// TestProcessCSV_ContainsFilter tests that URLs are filtered by substring
+func TestProcessCSV_ContainsFilter(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "test.csv")
+
+	// Create test CSV with various URLs
+	content := `Page,Measure Names,Measure Values
+www.example.com/manual/page1,Pageviews,100
+www.example.com/blog/post1,Pageviews,200
+www.example.com/manual/page2,Pageviews,150
+www.example.com/docs/guide,Pageviews,300
+www.example.com/manual/tutorial,Pageviews,250
+`
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	tests := []struct {
+		name           string
+		containsFilter string
+		expectedCount  int
+		expectedURLs   []string
+	}{
+		{
+			name:           "no filter",
+			containsFilter: "",
+			expectedCount:  5,
+			expectedURLs:   []string{"www.example.com/manual/page1", "www.example.com/blog/post1", "www.example.com/manual/page2", "www.example.com/docs/guide", "www.example.com/manual/tutorial"},
+		},
+		{
+			name:           "filter for /manual/",
+			containsFilter: "/manual/",
+			expectedCount:  3,
+			expectedURLs:   []string{"www.example.com/manual/page1", "www.example.com/manual/page2", "www.example.com/manual/tutorial"},
+		},
+		{
+			name:           "filter for /blog/",
+			containsFilter: "/blog/",
+			expectedCount:  1,
+			expectedURLs:   []string{"www.example.com/blog/post1"},
+		},
+		{
+			name:           "filter for /docs/",
+			containsFilter: "/docs/",
+			expectedCount:  1,
+			expectedURLs:   []string{"www.example.com/docs/guide"},
+		},
+		{
+			name:           "filter with no matches",
+			containsFilter: "/nonexistent/",
+			expectedCount:  0,
+			expectedURLs:   []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			records, err := processCSV(tmpFile, nil, tt.containsFilter, false)
+			if err != nil {
+				t.Fatalf("processCSV() unexpected error: %v", err)
+			}
+
+			if len(records) != tt.expectedCount {
+				t.Errorf("processCSV() got %d records, want %d", len(records), tt.expectedCount)
+			}
+
+			// Verify all expected URLs are present
+			for _, expectedURL := range tt.expectedURLs {
+				found := false
+				for _, record := range records {
+					if record.Page == expectedURL {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected URL %q not found in results", expectedURL)
+				}
+			}
+
+			// Verify no unexpected URLs are present
+			for _, record := range records {
+				found := false
+				for _, expectedURL := range tt.expectedURLs {
+					if record.Page == expectedURL {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Unexpected URL %q found in results", record.Page)
+				}
+			}
+		})
+	}
+}
+
+// TestProcessCSV_RankPreservation tests that original ranks are preserved after filtering
+func TestProcessCSV_RankPreservation(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := filepath.Join(tmpDir, "rank-preservation.csv")
+
+	// Create test CSV where filtering will skip some high-ranked items
+	content := `Page,Measure Names,Measure Values
+www.example.com/blog/post1,Pageviews,1000
+www.example.com/blog/post2,Pageviews,900
+www.example.com/manual/page1,Pageviews,800
+www.example.com/blog/post3,Pageviews,700
+www.example.com/manual/page2,Pageviews,600
+www.example.com/blog/post4,Pageviews,500
+`
+	if err := os.WriteFile(tmpFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Filter for /manual/ URLs only
+	records, err := processCSV(tmpFile, nil, "/manual/", false)
+	if err != nil {
+		t.Fatalf("processCSV() unexpected error: %v", err)
+	}
+
+	// Should get 2 records
+	if len(records) != 2 {
+		t.Fatalf("Expected 2 records, got %d", len(records))
+	}
+
+	// Verify ranks are preserved from the original dataset
+	// manual/page1 should be rank 3 (not rank 1)
+	if records[0].Page == "www.example.com/manual/page1" && records[0].Rank != 3 {
+		t.Errorf("manual/page1 should have rank 3, got %d", records[0].Rank)
+	}
+
+	// manual/page2 should be rank 5 (not rank 2)
+	if records[1].Page == "www.example.com/manual/page2" && records[1].Rank != 5 {
+		t.Errorf("manual/page2 should have rank 5, got %d", records[1].Rank)
+	}
+
+	// Verify the records are in the correct order (by rank)
+	if records[0].Rank > records[1].Rank {
+		t.Errorf("Records should be ordered by rank, got ranks %d and %d", records[0].Rank, records[1].Rank)
+	}
+}
+
 // TestWriteOutput_ShowPageviews tests that pageviews column is added when enabled
 func TestWriteOutput_ShowPageviews(t *testing.T) {
 	tmpDir := t.TempDir()
@@ -514,9 +657,9 @@ func TestWriteOutput_ShowPageviews(t *testing.T) {
 	}
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 300},
-		{Page: "www.example.com/page2", MeasureValues: 200},
-		{Page: "www.example.com/page3", MeasureValues: 100},
+		{Page: "www.example.com/page1", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
+		{Page: "www.example.com/page3", MeasureValues: 100, Rank: 3},
 	}
 
 	for _, tt := range tests {
@@ -575,8 +718,8 @@ func TestWriteOutput_ShowHeaders(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	records := []Record{
-		{Page: "www.example.com/page1", MeasureValues: 300},
-		{Page: "www.example.com/page2", MeasureValues: 200},
+		{Page: "www.example.com/page1", MeasureValues: 300, Rank: 1},
+		{Page: "www.example.com/page2", MeasureValues: 200, Rank: 2},
 	}
 
 	tests := []struct {

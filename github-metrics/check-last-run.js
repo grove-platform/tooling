@@ -1,11 +1,14 @@
 import fs from 'fs';
+import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 // Path to the state file (mounted from persistent volume)
+// Can be overridden via STATE_FILE_PATH environment variable
 const STATE_FILE_PATH = process.env.STATE_FILE_PATH || '/data/last-run.json';
 
-// Minimum days between runs
-const MIN_DAYS_BETWEEN_RUNS = parseInt(process.env.MIN_DAYS_BETWEEN_RUNS || '14', 10);
+// Minimum days between runs (13 days to account for timing variations with weekly Monday runs)
+// Can be overridden via MIN_DAYS_BETWEEN_RUNS environment variable
+const MIN_DAYS_BETWEEN_RUNS = parseInt(process.env.MIN_DAYS_BETWEEN_RUNS || '13', 10);
 
 /**
  * Check if enough time has passed since the last run
@@ -49,7 +52,7 @@ export function shouldRun() {
 /**
  * Update the state file with the current timestamp
  */
-export function updateLastRun() {
+export async function updateLastRun() {
   try {
     const now = new Date();
     const stateData = {
@@ -60,38 +63,16 @@ export function updateLastRun() {
     // Ensure the directory exists
     const dir = path.dirname(STATE_FILE_PATH);
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+      await mkdir(dir, { recursive: true });
     }
 
     // Write the state file
-    fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(stateData, null, 2), 'utf8');
+    await writeFile(STATE_FILE_PATH, JSON.stringify(stateData, null, 2), 'utf8');
     console.log(`✅ Updated last run timestamp: ${now.toISOString()}`);
 
   } catch (error) {
     console.error('Error updating last run time:', error.message);
     // Don't throw - we don't want to fail the job just because we can't write the state file
-  }
-}
-
-/**
- * Get the last run information
- * @returns {Object|null} Object with lastRun date and timestamp, or null if no previous run
- */
-export function getLastRunInfo() {
-  try {
-    if (!fs.existsSync(STATE_FILE_PATH)) {
-      return null;
-    }
-
-    const stateData = JSON.parse(fs.readFileSync(STATE_FILE_PATH, 'utf8'));
-    return {
-      lastRun: new Date(stateData.lastRun),
-      timestamp: stateData.timestamp
-    };
-
-  } catch (error) {
-    console.error('Error reading last run info:', error.message);
-    return null;
   }
 }
 

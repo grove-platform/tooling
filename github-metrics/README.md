@@ -2,7 +2,7 @@
 
 This directory contains tooling to enable us to track various GitHub project metrics programmatically.
 
-This tool runs as a Kubernetes CronJob on Kanopy, automatically collecting metrics from GitHub every 14 days and storing them in MongoDB Atlas.
+This tool runs as a Kubernetes CronJob on Kanopy, automatically collecting metrics from GitHub approximately every 13-14 days and storing them in MongoDB Atlas.
 
 Planned future work:
 
@@ -14,7 +14,7 @@ Planned future work:
 ### Get metrics from GitHub
 
 This is a simple PoC that uses [octokit](https://github.com/octokit/octokit.js) to get the following data out of GitHub
-for a given repository over a trailing 14 day period:
+for a given repository over a trailing 14-day period:
 
 - Views
 - Unique Views
@@ -24,7 +24,7 @@ for a given repository over a trailing 14 day period:
 - Top 10 referral sources
 - Top 10 paths/destinations in the repo
 
-The intent is to also get the following maintenance-related stats for a given repository over a trailing 14 day period:
+The intent is to also get the following maintenance-related stats for a given repository over a trailing 14-day period:
 
 - Code frequency
 - Commit count
@@ -135,7 +135,7 @@ For this project, as a MongoDB org member, you must also auth your PAT with SSO.
 
 ## Automated Deployment (Kanopy CronJob)
 
-This tool is deployed as a Kubernetes CronJob on Kanopy that runs automatically every 14 days.
+This tool is deployed as a Kubernetes CronJob on Kanopy that runs automatically approximately every 13-14 days.
 
 ### Deployment Architecture
 
@@ -150,11 +150,22 @@ The deployment consists of three main components:
 The cronjob is **scheduled to run weekly on Mondays at 8:00 AM UTC** (`0 8 * * 1`), but the application includes smart logic to prevent running too frequently:
 
 - The cronjob triggers every Monday
-- The application checks if 14 days have passed since the last successful run
-- If less than 14 days have passed, the job exits early without collecting metrics
-- If 14 days or more have passed, it collects metrics and updates the timestamp
+- The application checks if 13 days have passed since the last successful run
+- If less than 13 days have passed, the job exits early without collecting metrics
+- If 13 days or more have passed, it collects metrics and updates the timestamp
 
 The last run timestamp is stored in a persistent volume (`/data/last-run.json`) that survives between cronjob executions.
+
+#### Environment Variables
+
+The following environment variables can be configured:
+
+- **`ATLAS_CONNECTION_STRING`** (required): MongoDB Atlas connection string for storing metrics
+- **`GITHUB_TOKEN`** (required): GitHub Personal Access Token with `repo` permissions
+- **`STATE_FILE_PATH`** (optional): Path to the state file for tracking last run timestamp. Default: `/data/last-run.json`
+- **`MIN_DAYS_BETWEEN_RUNS`** (optional): Minimum number of days between metric collection runs. Default: `13`
+
+The required secrets (`ATLAS_CONNECTION_STRING` and `GITHUB_TOKEN`) are configured in `cronjobs.yml` as Kubernetes secrets.
 
 ### Deployment Process
 
@@ -213,8 +224,8 @@ kubectl exec -n docs <pod-name> -- cat /data/last-run.json
 ```
 
 The logs will show whether the job ran or was skipped:
-- `⏭️ Skipping run - only X days since last run (need 14)` - Job skipped, not enough time passed
-- `✅ Proceeding with run - X days since last run` - Job is collecting metrics
+- `Skipping run - only X days since last run (need 13)` - Job skipped, not enough time passed
+- `Proceeding with run - X days since last run` - Job is collecting metrics
 
 ### Configuration Changes
 

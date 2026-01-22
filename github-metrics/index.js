@@ -39,7 +39,7 @@ async function processRepos() {
         await addMetricsToAtlas(metricsDocs);
 
         // Update the last run timestamp after successful completion
-        updateLastRun();
+        await updateLastRun();
     } catch (error) {
         console.error('Error processing repos:', error);
         throw error; // Re-throw to be caught by main handler
@@ -52,7 +52,7 @@ async function main() {
 
     // Check if enough time has passed since last run
     if (!shouldRun()) {
-        console.log('⏭️  Exiting - not enough time has passed since last run');
+        console.log('Exiting - not enough time has passed since last run');
         process.exit(0);
     }
 

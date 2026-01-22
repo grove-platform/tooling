@@ -1,0 +1,77 @@
+---
+kind: pipeline
+type: kubernetes
+name: github-metrics
+
+trigger:
+  branch:
+  - main
+  event:
+  - push
+
+steps:
+- name: check-changes
+  image: alpine/git
+  commands:
+  - |
+    # Check if any files in github-metrics/ directory changed
+    git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_AFTER | grep -q "^github-metrics/" && echo "Changes detected" || (echo "No changes in github-metrics/, skipping" && exit 78)
+
+- name: test
+  image: node:20-alpine
+  commands:
+  - cd github-metrics
+  - npm ci
+  - node --version
+  - npm --version
+  - echo "Validating package.json and dependencies..."
+
+- name: publish
+  image: plugins/kaniko-ecr
+  settings:
+    create_repository: true
+    registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
+    repo: docs/github-metrics
+    tags:
+    - git-${DRONE_COMMIT_SHA:0:7}
+    - latest
+    access_key:
+      from_secret: ecr_access_key
+    secret_key:
+      from_secret: ecr_secret_key
+    context: github-metrics
+    dockerfile: github-metrics/Dockerfile
+
+- name: deploy
+  image: quay.io/mongodb/drone-helm:v3
+  settings:
+    chart: mongodb/cronjobs
+    chart_version: 1.21.2
+    add_repos: [ mongodb=https://10gen.github.io/helm-charts ]
+    namespace: docs
+    release: github-metrics
+    values: image.tag=git-${DRONE_COMMIT_SHA:0:7},image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics
+    values_files: [ 'github-metrics/cronjobs.yml' ]
+    api_server: https://api.prod.corp.mongodb.com
+    kubernetes_token:
+      from_secret: kubernetes_token
+
+- name: notify-slack
+  image: alpine/curl
+  environment:
+    SLACK_WEBHOOK:
+      from_secret: slack_webhook_url
+  commands:
+  - |
+    if [ "$DRONE_BUILD_STATUS" = "success" ]; then
+      STATUS_MSG="✅ *GitHub Metrics CronJob Deploy Succeeded*"
+    else
+      STATUS_MSG="❌ *GitHub Metrics CronJob Deploy Failed*"
+    fi
+    curl -X POST -H 'Content-type: application/json' \
+      --data "{\"text\": \"$STATUS_MSG\n*Repo:* $DRONE_REPO_NAME\n*Branch:* $DRONE_BRANCH\n*Commit:* ${DRONE_COMMIT_SHA:0:7}\n*Author:* $DRONE_COMMIT_AUTHOR\n*Build:* <$DRONE_BUILD_LINK|#$DRONE_BUILD_NUMBER>\"}" \
+      "$SLACK_WEBHOOK"
+  when:
+    status:
+    - success
+    - failure

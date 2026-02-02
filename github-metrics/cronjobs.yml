@@ -30,7 +30,7 @@ cronJobs:
   persistence:
     enabled: true
     name: github-metrics-state
-    storageClass: "standard"
+    storageClass: "kops-csi-1-21"
     accessMode: ReadWriteOnce
     size: 1Gi
     mountPath: /data

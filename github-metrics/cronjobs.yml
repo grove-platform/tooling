@@ -29,6 +29,7 @@ cronJobs:
   # Persistent volume to store last run timestamp
   persistence:
     enabled: true
+    name: github-metrics-state
     storageClass: "standard"
     accessMode: ReadWriteOnce
     size: 1Gi

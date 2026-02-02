@@ -47,7 +47,6 @@ async function processRepos() {
 }
 
 // Main execution
-// Test Drone pipeline integration
 async function main() {
     console.log('🚀 GitHub Metrics Collection Starting...');
 

@@ -71,6 +71,8 @@ steps:
     curl -X POST -H 'Content-type: application/json' \
       --data "{\"text\": \"$STATUS_MSG\n*Repo:* $DRONE_REPO_NAME\n*Branch:* $DRONE_BRANCH\n*Commit:* ${DRONE_COMMIT_SHA:0:7}\n*Author:* $DRONE_COMMIT_AUTHOR\n*Build:* <$DRONE_BUILD_LINK|#$DRONE_BUILD_NUMBER>\"}" \
       "$SLACK_WEBHOOK"
+  depends_on:
+  - deploy
   when:
     status:
     - success

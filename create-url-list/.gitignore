@@ -2,3 +2,5 @@ output/
 test-output/
 create-url-list
 config.yml
+utils/convert-csv
+utils/debug-csv

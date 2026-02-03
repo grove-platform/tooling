@@ -117,3 +117,84 @@ The tool exits with code 1 and displays an error message if:
 - Required columns are missing from the CSV
 - URL structure doesn't match expected format (must start with `www.`)
 - Range format is invalid
+
+## Troubleshooting Utilities
+
+The `utils/` directory contains helper tools for diagnosing and fixing CSV format issues.
+
+### CSV Format Debugger
+
+If you're getting a "missing required columns" error, use the debug tool to inspect your CSV file:
+
+```bash
+# Build the debug tool
+cd utils
+go build -o debug-csv debug-csv.go
+
+# Run it on your CSV file
+./debug-csv /path/to/your/file.csv
+```
+
+The debug tool will show you:
+- How many columns were detected
+- The exact name of each column (with quotes to reveal whitespace)
+- Byte representation to reveal hidden characters (BOM, special encoding, etc.)
+- Whether each required column was found
+- Warnings about common issues (BOM, extra whitespace, etc.)
+
+**Example output:**
+```
+Found 5 columns in header:
+
+Column 0: "Page"
+  Bytes: [80 97 103 101]
+  Length: 4
+  ✓ Matches required column 'Page'
+
+Column 2: "Measure Names"
+  Bytes: [77 101 97 115 117 114 101 32 78 97 109 101 115]
+  Length: 13
+  ✓ Matches required column 'Measure Names'
+...
+```
+
+### CSV Format Converter
+
+If your CSV file is in UTF-16 encoding or tab-delimited format (common with Excel/Tableau exports), use the converter tool:
+
+```bash
+# Build the converter tool
+cd utils
+go build -o convert-csv convert-csv.go
+
+# Convert your file
+./convert-csv /path/to/input.csv /path/to/output.csv
+```
+
+This tool converts:
+- **From:** UTF-16 encoding with tab delimiters
+- **To:** UTF-8 encoding with comma delimiters (standard CSV)
+
+**Example:**
+```bash
+# Convert a Tableau export
+./convert-csv ~/Downloads/tableau-export.csv ~/temp/converted.csv
+
+# Then use the converted file
+cd ..
+./create-url-list ~/temp/converted.csv 1-250 output.csv
+```
+
+### Common CSV Issues
+
+1. **UTF-16 encoding with BOM** - File starts with byte order mark (bytes `255 254`)
+   - **Solution:** Use `convert-csv` tool
+
+2. **Tab-delimited instead of comma-delimited** - Columns separated by tabs
+   - **Solution:** Use `convert-csv` tool
+
+3. **Extra whitespace in column names** - Column named `" Page "` instead of `"Page"`
+   - **Solution:** Edit the CSV header row to remove extra spaces
+
+4. **Wrong column names** - Different capitalization or spelling
+   - **Solution:** Rename columns to exactly match: `Page`, `Measure Names`, `Measure Values`

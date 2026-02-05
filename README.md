@@ -10,7 +10,9 @@ uses perform various tasks related to the Grove platform.
     database in Atlas.
   - `dodec`, or the Database of Devoured Example Code: a query tool that lets us find code examples and related
     metadata in the database for reporting or to perform manual updates.
+- `create-url-list`: A Go CLI tool that extracts and ranks URLs by pageviews from CSV data containing page analytics.
 - `dependency-manager`: A Go CLI project to help us manage dependencies for multiple ecosystems in the docs monorepo
+- `get-docs-markdown`: A Go CLI tool that downloads the markdown versions of documentation pages from an input csv file.
 - `github-metrics`: a Node.js script that gets engagement metrics from GitHub for specified repos and writes them
   to a database in Atlas.
 - `query-docs-feedback`: a Go project with type definitions that queries the MongoDB

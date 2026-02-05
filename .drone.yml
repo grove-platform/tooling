@@ -15,7 +15,13 @@ steps:
   commands:
   - |
     # Check if any files in github-metrics/ directory changed
-    git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_AFTER | grep -q "^github-metrics/" && echo "Changes detected" || (echo "No changes in github-metrics/, skipping" && exit 78)
+    if git diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_AFTER | grep -q "^github-metrics/"; then
+      echo "Changes detected in github-metrics/"
+      exit 0
+    else
+      echo "No changes in github-metrics/, skipping pipeline"
+      exit 1
+    fi
 
 - name: test
   image: node:20-alpine
@@ -25,6 +31,11 @@ steps:
   - node --version
   - npm --version
   - echo "Validating package.json and dependencies..."
+  when:
+    status:
+    - success
+  depends_on:
+  - check-changes
 
 - name: publish
   image: plugins/kaniko-ecr
@@ -41,6 +52,11 @@ steps:
       from_secret: ecr_secret_key
     context: github-metrics
     dockerfile: github-metrics/Dockerfile
+  when:
+    status:
+    - success
+  depends_on:
+  - test
 
 - name: deploy
   image: quay.io/mongodb/drone-helm:v3
@@ -55,6 +71,11 @@ steps:
     api_server: https://api.prod.corp.mongodb.com
     kubernetes_token:
       from_secret: kubernetes_token
+  when:
+    status:
+    - success
+  depends_on:
+  - publish
 
 - name: notify-slack
   image: alpine/curl

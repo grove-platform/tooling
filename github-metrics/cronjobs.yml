@@ -8,6 +8,7 @@ image:
 globalEnvSecrets:
   GITHUB_TOKEN: github-metrics-github-token
   ATLAS_CONNECTION_STRING: github-metrics-atlas-connection-string
+  SLACK_WEBHOOK_URL: github-metrics-slack-webhook
 
 cronJobs:
 - name: github-metrics-collection

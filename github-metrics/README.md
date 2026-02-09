@@ -162,13 +162,15 @@ The following environment variables can be configured:
 
 - **`ATLAS_CONNECTION_STRING`** (required): MongoDB Atlas connection string for storing metrics
 - **`GITHUB_TOKEN`** (required): GitHub Personal Access Token with `repo` permissions
+- **`SLACK_WEBHOOK_URL`** (optional): Slack webhook URL for sending notifications about cronjob execution
 - **`STATE_FILE_PATH`** (optional): Path to the state file for tracking last run timestamp. Default: `/data/last-run.json`
 - **`MIN_DAYS_BETWEEN_RUNS`** (optional): Minimum number of days between metric collection runs. Default: `13`
 
-The required secrets (`ATLAS_CONNECTION_STRING` and `GITHUB_TOKEN`) are configured in `cronjobs.yml` as Kubernetes secrets:
+The secrets are configured in `cronjobs.yml` as Kubernetes secrets:
 
 - **`github-metrics-github-token`**: Contains the `GITHUB_TOKEN` key
 - **`github-metrics-atlas-connection-string`**: Contains the `ATLAS_CONNECTION_STRING` key
+- **`github-metrics-slack-webhook`**: Contains the `SLACK_WEBHOOK_URL` key (optional)
 
 To create these secrets in the `docs` namespace:
 
@@ -182,7 +184,21 @@ kubectl create secret generic github-metrics-github-token \
 kubectl create secret generic github-metrics-atlas-connection-string \
   --from-literal=ATLAS_CONNECTION_STRING='your-atlas-connection-string-here' \
   -n docs
+
+# Create Slack webhook secret (optional - for cronjob execution notifications)
+kubectl create secret generic github-metrics-slack-webhook \
+  --from-literal=SLACK_WEBHOOK_URL='your-slack-webhook-url-here' \
+  -n docs
 ```
+
+### Slack Notifications
+
+The cronjob sends Slack notifications for:
+- ✅ **Successful execution**: Reports number of repositories processed
+- ⏭️ **Skipped execution**: When not enough time has passed since last run
+- ❌ **Failed execution**: Includes error details
+
+If `SLACK_WEBHOOK_URL` is not configured, notifications are skipped silently.
 
 ### Deployment Process
 
@@ -192,9 +208,10 @@ The deployment is fully automated via Drone CI/CD with the following steps:
 2. **Test**: Validates dependencies with `npm ci`
 3. **Build**: Builds Docker image using Kaniko and publishes to ECR
 4. **Deploy**: Deploys to production Kanopy cluster using Helm
-5. **Notify**: Sends Slack notification on success or failure
 
 The pipeline only runs on pushes to the `main` branch and skips if no github-metrics files changed.
+
+**Note:** Deployment notifications have been removed. Slack notifications are now sent by the cronjob itself when it executes, providing more relevant information about the actual metrics collection process.
 
 ### Manual Deployment
 

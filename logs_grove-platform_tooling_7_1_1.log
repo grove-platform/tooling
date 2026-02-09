@@ -1,0 +1,105 @@
+Cloning with 5 retries
+Initialized empty Git repository in /drone/src/.git/
++ git fetch origin +refs/heads/main:
+From https://github.com/grove-platform/tooling
+ * branch            main       -> FETCH_HEAD
+ * [new branch]      main       -> origin/main
++ git checkout 4d58b3ce6d7af7300edff32932f850ef275c1ed5 -b main
+Switched to a new branch 'main'
+
+
++ # Check if any files in github-metrics/ directory changed\ngit diff --name-only $DRONE_COMMIT_BEFORE $DRONE_COMMIT_AFTER | grep -q "^github-metrics/" && echo "Changes detected" || (echo "No changes in github-metrics/, skipping" && exit 78)\n
+No changes in github-metrics/, skipping
+
++ cd github-metrics
++ npm ci
+
+added 46 packages, and audited 47 packages in 2s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
++ node --version
+v20.20.0
++ npm --version
+10.8.2
++ echo "Validating package.json and dependencies..."
+Validating package.json and dependencies...
+
++ /kaniko/executor --dockerfile=github-metrics/Dockerfile --context=dir://github-metrics --destination=795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics:git-4d58b3c --destination=795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics:latest --digest-file=/kaniko/digest-file
+INFO[0000] Retrieving image manifest node:20-alpine
+INFO[0000] Retrieving image node:20-alpine from registry index.docker.io
+INFO[0000] Built cross stage deps: map[]
+INFO[0000] Retrieving image manifest node:20-alpine
+INFO[0000] Returning cached image manifest
+INFO[0000] Executing 0 build triggers
+INFO[0000] Building stage 'node:20-alpine' [idx: '0', base-idx: '-1']
+INFO[0000] Unpacking rootfs as cmd COPY package.json package-lock.json ./ requires it.
+INFO[0002] WORKDIR /app
+INFO[0002] Cmd: workdir
+INFO[0002] Changed working directory to /app
+INFO[0002] Creating directory /app with uid -1 and gid -1
+INFO[0002] Taking snapshot of files...
+INFO[0002] COPY package.json package-lock.json ./
+INFO[0002] Taking snapshot of files...
+INFO[0002] RUN npm ci --only=production
+INFO[0002] Initializing snapshotter ...
+INFO[0002] Taking snapshot of full filesystem...
+INFO[0007] Cmd: /bin/sh
+INFO[0007] Args: [-c npm ci --only=production]
+INFO[0007] Running: [/bin/sh -c npm ci --only=production]
+npm warn config only Use `--omit=dev` to omit dev dependencies from the install.
+
+added 46 packages, and audited 47 packages in 1s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.9.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.9.0
+npm notice To update run: npm install -g npm@11.9.0
+npm notice
+INFO[0008] Taking snapshot of full filesystem...
+INFO[0009] COPY . .
+INFO[0009] Taking snapshot of files...
+INFO[0009] RUN addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 &&     chown -R nodejs:nodejs /app
+INFO[0009] Cmd: /bin/sh
+INFO[0009] Args: [-c addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 &&     chown -R nodejs:nodejs /app]
+INFO[0009] Running: [/bin/sh -c addgroup -g 1001 -S nodejs &&     adduser -S nodejs -u 1001 &&     chown -R nodejs:nodejs /app]
+INFO[0010] Taking snapshot of full filesystem...
+INFO[0010] USER nodejs
+INFO[0010] Cmd: USER
+INFO[0010] ENV NODE_ENV=production
+INFO[0010] CMD ["node", "index.js"]
+INFO[0010] Pushing image to 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics:git-4d58b3c
+INFO[0012] Pushed 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics@sha256:27b6314f258260e9c29e53f38c4a64e97e2ff6e1dfdf5734a6a48fee894e4d91
+INFO[0012] Pushing image to 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics:latest
+INFO[0012] Pushed 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics@sha256:27b6314f258260e9c29e53f38c4a64e97e2ff6e1dfdf5734a6a48fee894e4d91
+failed to write plugin output file at path:  with error: open : no such file or directory
+
+
+2026/02/05 16:39:55 A v3 Release of github-metrics was found
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/.kube/config
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /root/.kube/config
+"mongodb" has been added to your repositories
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /root/.kube/config
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /root/.kube/config
+Release "github-metrics" has been upgraded. Happy Helming!
+NAME: github-metrics
+LAST DEPLOYED: Thu Feb  5 16:39:55 2026
+NAMESPACE: docs
+STATUS: deployed
+REVISION: 5
+TEST SUITE: None
+
++ if [ "$DRONE_BUILD_STATUS" = "success" ]; then\n  STATUS_MSG="✅ *GitHub Metrics CronJob Deploy Succeeded*"\nelse\n  STATUS_MSG="❌ *GitHub Metrics CronJob Deploy Failed*"\nfi\ncurl -X POST -H 'Content-type: application/json' \\n  --data "{\"text\": \"$STATUS_MSG\n*Repo:* $DRONE_REPO_NAME\n*Branch:* $DRONE_BRANCH\n*Commit:* 4d58b3c\n*Author:* $DRONE_COMMIT_AUTHOR\n*Build:* <$DRONE_BUILD_LINK|#$DRONE_BUILD_NUMBER>\"}" \\n  "$SLACK_WEBHOOK"\n
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0
+100   211 100    11 100   200    96  1754  --:--:-- --:--:-- --:--:--  1867
+{"ok":true}
+

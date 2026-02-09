@@ -165,7 +165,24 @@ The following environment variables can be configured:
 - **`STATE_FILE_PATH`** (optional): Path to the state file for tracking last run timestamp. Default: `/data/last-run.json`
 - **`MIN_DAYS_BETWEEN_RUNS`** (optional): Minimum number of days between metric collection runs. Default: `13`
 
-The required secrets (`ATLAS_CONNECTION_STRING` and `GITHUB_TOKEN`) are configured in `cronjobs.yml` as Kubernetes secrets.
+The required secrets (`ATLAS_CONNECTION_STRING` and `GITHUB_TOKEN`) are configured in `cronjobs.yml` as Kubernetes secrets:
+
+- **`github-metrics-github-token`**: Contains the `GITHUB_TOKEN` key
+- **`github-metrics-atlas-connection-string`**: Contains the `ATLAS_CONNECTION_STRING` key
+
+To create these secrets in the `docs` namespace:
+
+```bash
+# Create GitHub token secret
+kubectl create secret generic github-metrics-github-token \
+  --from-literal=GITHUB_TOKEN='your-github-token-here' \
+  -n docs
+
+# Create Atlas connection string secret
+kubectl create secret generic github-metrics-atlas-connection-string \
+  --from-literal=ATLAS_CONNECTION_STRING='your-atlas-connection-string-here' \
+  -n docs
+```
 
 ### Deployment Process
 

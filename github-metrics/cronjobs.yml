@@ -6,8 +6,8 @@ image:
 
 # global secrets are references to k8s Secrets
 globalEnvSecrets:
-  GITHUB_TOKEN: github-token
-  ATLAS_CONNECTION_STRING: atlas-connection-string
+  GITHUB_TOKEN: github-metrics-github-token
+  ATLAS_CONNECTION_STRING: github-metrics-atlas-connection-string
 
 cronJobs:
 - name: github-metrics-collection

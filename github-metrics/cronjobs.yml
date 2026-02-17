@@ -3,12 +3,27 @@
 image:
   repository: 795250896452.dkr.ecr.us-east-1.amazonaws.com/docs/github-metrics
   tag: latest
+  pullPolicy: Always
 
 # global secrets are references to k8s Secrets
 globalEnvSecrets:
   GITHUB_TOKEN: github-metrics-github-token
   ATLAS_CONNECTION_STRING: github-metrics-atlas-connection-string
   SLACK_WEBHOOK_URL: github-metrics-slack-webhook
+
+# Default alerting rules for cronjob failures
+# See: https://github.com/10gen/helm-charts/tree/master/charts/cronjobs#defaultalerts-configuration
+defaultAlerts:
+  enabled: true
+  slack: github-metrics-slack
+
+alertRoutingConfig:
+  enabled: true
+  slackReceivers:
+    github-metrics-slack:
+      apiURL:
+        name: "github-metrics-slack-alert"
+        key: "apiUrl"
 
 cronJobs:
 - name: github-metrics-collection

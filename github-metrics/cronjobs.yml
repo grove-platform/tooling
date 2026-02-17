@@ -34,6 +34,11 @@ cronJobs:
     limits:
       cpu: 500m
       memory: 512Mi
+  # Run as the nodejs user (UID 1001) created in Dockerfile
+  securityContext:
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
   # Persistent volume to store last run timestamp
   persistence:
     enabled: true

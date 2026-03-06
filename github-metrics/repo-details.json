@@ -18,5 +18,9 @@
   {
     "owner": "mongodb",
     "repo": "sample-app-python-mflix"
+  },
+  {
+    "owner": "mongodb",
+    "repo": "agent-skills"
   }
 ]

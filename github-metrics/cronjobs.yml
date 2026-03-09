@@ -39,11 +39,4 @@ cronJobs:
     runAsUser: 1001
     runAsGroup: 1001
     fsGroup: 1001
-  # Persistent volume to store last run timestamp
-  persistence:
-    enabled: true
-    name: github-metrics-state
-    storageClass: "kops-csi-1-21"
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /data
+  # Last run state is now stored in MongoDB instead of a PVC

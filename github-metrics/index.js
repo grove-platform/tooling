@@ -50,7 +50,7 @@ async function main() {
 
     try {
         // Check if enough time has passed since last run
-        if (!shouldRun()) {
+        if (!await shouldRun()) {
             console.log('Exiting - not enough time has passed since last run');
             await sendSlackNotification({ skipped: true });
             process.exit(0);

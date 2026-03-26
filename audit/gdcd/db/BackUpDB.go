@@ -51,6 +51,14 @@ func BackUpDb() {
 		log.Fatalf("Error listing collections: %v", err)
 	}
 
+	// Check if a same-day or prior-day backup already exists. If so, skip the copy.
+	// This prevents overwriting the current backup when re-running a job after a partial run.
+	existingBackups := getBackupDbNames(client, ctx)
+	if hasRecentBackup(existingBackups) {
+		log.Println("A same-day or prior-day backup already exists. Skipping backup copy.")
+		return
+	}
+
 	log.Println("Backing up database...")
 	// Iterate over each collection, copying records from the source to target DB
 	for _, collName := range collectionNames {
@@ -86,18 +94,73 @@ func BackUpDb() {
 	}
 	log.Println("Successfully backed up database")
 
-	// Drop the oldest backup. Get a list of backup names so we can find the oldest backup.
+	// Drop the oldest backup only if we have at least 3 backups AND the oldest is at least 21 days
+	// old. This ensures we maintain ~3 weeks of weekly history and prevents accidentally dropping
+	// all backups during partial runs or tightly-clustered re-runs.
 	backupNames := getBackupDbNames(client, ctx)
-	oldestBackup := findOldestBackup(backupNames)
-	// Get a handle for the database
-	dbToDrop := client.Database(oldestBackup)
-
-	// Drop the database
+	const minBackupCount = 3
+	const minBackupAgeDays = 21
+	if len(backupNames) < minBackupCount {
+		log.Printf("Only %d backup(s) exist (need %d). Skipping oldest backup drop.", len(backupNames), minBackupCount)
+		return
+	}
+	oldestBackupDate, err := parseBackupDate(findOldestBackup(backupNames))
+	if err != nil {
+		log.Fatalf("Failed to parse oldest backup date: %v", err)
+	}
+	oldestAgedays := int(time.Since(oldestBackupDate).Hours() / 24)
+	if oldestAgedays < minBackupAgeDays {
+		log.Printf("Oldest backup is only %d day(s) old (need %d). Skipping oldest backup drop.", oldestAgedays, minBackupAgeDays)
+		return
+	}
+	oldestBackupName := findOldestBackup(backupNames)
+	dbToDrop := client.Database(oldestBackupName)
 	err = dbToDrop.Drop(ctx)
 	if err != nil {
-		log.Fatalf("Failed to drop database %v: %v", oldestBackup, err)
+		log.Fatalf("Failed to drop database %v: %v", oldestBackupName, err)
 	}
-	log.Printf("Oldest backup database '%s' dropped successfully\n", oldestBackup)
+	log.Printf("Oldest backup database '%s' dropped successfully\n", oldestBackupName)
+}
+
+// hasRecentBackup returns true if any backup is from today or yesterday.
+func hasRecentBackup(backupNames []string) bool {
+	now := time.Now().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	yesterday := today.AddDate(0, 0, -1)
+	for _, name := range backupNames {
+		date, err := parseBackupDate(name)
+		if err != nil {
+			continue
+		}
+		if !date.Before(yesterday) {
+			return true
+		}
+	}
+	return false
+}
+
+// parseBackupDate extracts the date from a backup database name (e.g. "backup_code_metrics_March_26").
+func parseBackupDate(name string) (time.Time, error) {
+	parts := strings.Split(name, "_")
+	if len(parts) < 4 {
+		return time.Time{}, fmt.Errorf("invalid backup name: %s", name)
+	}
+	monthStr := parts[len(parts)-2]
+	dayStr := parts[len(parts)-1]
+	day, err := strconv.Atoi(dayStr)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid day in backup name %s: %v", name, err)
+	}
+	month, err := parseMonth(monthStr)
+	if err != nil {
+		return time.Time{}, err
+	}
+	now := time.Now().UTC()
+	year := now.Year()
+	if month > now.Month() {
+		year--
+	}
+	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC), nil
 }
 
 // The cluster contains a mix of databases - some are backups, and some are other databases.
@@ -120,50 +183,13 @@ func getBackupDbNames(client *mongo.Client, ctx context.Context) []string {
 
 // Parse the dates from the backup database names to find the oldest backup database.
 func findOldestBackup(backupNames []string) string {
-	// Get the current date to determine the year for each backup
-	now := time.Now()
-	currentMonth := now.Month()
-	currentYear := now.Year()
-
-	// Variables to track the oldest date and its corresponding string
 	var oldestDate time.Time
 	var oldestBackupName string
-
-	// Iterate over the strings to extract and compare dates
 	for _, entry := range backupNames {
-		// Split the string and find the month and day (assume the format is fixed)
-		parts := strings.Split(entry, "_")
-		if len(parts) < 4 {
-			continue // Skip invalid strings
-		}
-		monthStr := parts[len(parts)-2] // Second-to-last part is the month
-		dayStr := parts[len(parts)-1]   // Last part is the day
-
-		// Convert the day string to an integer
-		day, err := strconv.Atoi(dayStr)
+		date, err := parseBackupDate(entry)
 		if err != nil {
-			fmt.Println("Error converting day:", err)
 			continue
 		}
-
-		// Parse the month using the time.Month enum
-		month, err := parseMonth(monthStr)
-		if err != nil {
-			fmt.Println("Error parsing month:", err)
-			continue
-		}
-
-		// Determine the year for this backup
-		// If the backup month is after the current month, it must be from the previous year
-		year := currentYear
-		if month > currentMonth {
-			year = currentYear - 1
-		}
-
-		// Create a time.Time object for the given month and day
-		date := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-
-		// Compare dates to find the earliest one
 		if oldestBackupName == "" || date.Before(oldestDate) {
 			oldestDate = date
 			oldestBackupName = entry

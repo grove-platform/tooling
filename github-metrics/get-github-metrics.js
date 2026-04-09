@@ -21,7 +21,8 @@ class MetricsDoc {
         this.date = new Date().toISOString();
         this.owner = owner;
         this.repo = repo;
-        this.clones = clones;
+        this.clones = clones.clones;
+        this.uniqueClones = clones.uniqueClones;
         this.viewCount = pageViews.viewCount;
         this.uniqueViews = pageViews.uniqueViews;
         this.stars = metricCounts.stars;
@@ -56,7 +57,10 @@ async function getRepoClones(octokit, owner, repo) {
         owner: owner,
         repo: repo
     });
-    return clones.data.count;
+    return {
+        clones: clones.data.count,
+        uniqueClones: clones.data.uniques,
+    };
 }
 
 async function getPageViews(octokit, owner, repo) {

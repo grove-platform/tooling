@@ -133,6 +133,14 @@ For this project, as a MongoDB org member, you must also auth your PAT with SSO.
    A document was inserted into mongodb_docs-notebooks with the _id: 678197a0ffe1539ff213bd86
    ```
 
+   To test the tool without writing anything to Atlas, use the `--dry-run` flag:
+
+   ```
+   node --env-file=.env index.js --dry-run
+   ```
+
+   In dry run mode, the tool skips the Atlas connection check, fetches metrics from GitHub as normal, and thenprints the collected data to the console instead of writing it to the database.
+
 ## Automated Deployment (Kanopy CronJob)
 
 This tool is deployed as a Kubernetes CronJob on Kanopy that runs automatically approximately every 13-14 days.
@@ -194,6 +202,7 @@ kubectl create secret generic github-metrics-slack-webhook \
 ### Slack Notifications
 
 The cronjob sends Slack notifications for:
+
 - ✅ **Successful execution**: Reports number of repositories processed
 - ⏭️ **Skipped execution**: When not enough time has passed since last run
 - ❌ **Failed execution**: Includes error details
@@ -258,6 +267,7 @@ kubectl exec -n docs <pod-name> -- cat /data/last-run.json
 ```
 
 The logs will show whether the job ran or was skipped:
+
 - `Skipping run - only X days since last run (need 13)` - Job skipped, not enough time passed
 - `Proceeding with run - X days since last run` - Job is collecting metrics
 

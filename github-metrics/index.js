@@ -31,24 +31,43 @@ async function processRepos() {
   );
 
   const metricsDocs = [];
+  const failedRepos = [];
 
-  // Iterate through the repos array
+  // Iterate through the repos array. A failure on one repo (e.g. a token without
+  // push access to its traffic endpoints) should not block metrics for the rest.
   for (const repo of repos) {
-    const metricsDoc = await getGitHubMetrics(repo.owner, repo.repo);
-    metricsDocs.push(metricsDoc);
+    try {
+      const metricsDoc = await getGitHubMetrics(repo.owner, repo.repo);
+      metricsDocs.push(metricsDoc);
+    } catch (error) {
+      console.error(
+        `Failed to collect metrics for ${repo.owner}/${repo.repo}: ${error.message}`,
+      );
+      failedRepos.push(`${repo.owner}/${repo.repo}`);
+    }
   }
 
   if (dryRun) {
     console.log("[DRY RUN] Skipping Atlas write. Collected metrics:");
     console.log(JSON.stringify(metricsDocs, null, 2));
-  } else {
+  } else if (metricsDocs.length > 0) {
     await addMetricsToAtlas(metricsDocs);
 
-    // Update the last run timestamp after successful completion
+    // Update the last run timestamp after successful completion. We update even
+    // when some repos failed: the successful repos' data is only available in
+    // the trailing 14-day window, and one broken repo shouldn't cost us the
+    // rest of the data on the next scheduled run. Failures are still surfaced
+    // via the thrown error below (Slack notification + non-zero exit code).
     await updateLastRun();
   }
 
-  return repos.length; // Return count of repos processed
+  if (failedRepos.length > 0) {
+    throw new Error(
+      `Failed to collect metrics for ${failedRepos.length} of ${repos.length} repo(s): ${failedRepos.join(", ")}`,
+    );
+  }
+
+  return metricsDocs.length; // Return count of repos processed
 }
 
 // Main execution
